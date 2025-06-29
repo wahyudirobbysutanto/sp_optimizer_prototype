@@ -1,0 +1,130 @@
+import os
+import requests
+import re
+from dotenv import load_dotenv
+
+load_dotenv()
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+
+
+def sanitize_sql(generated_sql):
+    lines = generated_sql.strip().splitlines()
+    start_idx = 0
+
+    # Cari baris pertama yang mengandung CREATE PROCEDURE
+    for i, line in enumerate(lines):
+        if re.search(r'\bCREATE\s+PROCEDURE\b', line, re.IGNORECASE):
+            start_idx = i
+            break
+
+    cleaned_lines = lines[start_idx:]
+    cleaned_text = "\n".join(cleaned_lines)
+
+    # Hapus karakter tidak valid
+    cleaned_text = cleaned_text.replace("`", "")
+    cleaned_text = re.sub(r"^\s*\d+\.\s*", "", cleaned_text, flags=re.MULTILINE)
+
+    return cleaned_text
+
+def optimize_stored_procedure(sp_text, table_info_text=None):
+    if table_info_text is None:
+        table_info_text = "(tidak ada metadata tabel)"
+    
+    prompt = f"""
+Saya sedang membangun sistem otomatis untuk optimasi stored procedure SQL Server.
+
+Berikut adalah definisi stored procedure yang ingin dioptimalkan:
+
+=== BEGIN SP ===
+{sp_text}
+=== END SP ===
+
+Berikut informasi tabel-tabel yang digunakan, termasuk kolom dan index yang sudah ada:
+
+=== BEGIN TABLE INFO ===
+{table_info_text}
+=== END TABLE INFO ===
+
+Tolong optimalkan stored procedure tersebut agar lebih efisien, **tanpa mengubah hasil akhir atau struktur tabel/schema**.
+
+Instruksi penting:
+- Gantilah semua SELECT * dengan daftar kolom eksplisit dari metadata di atas
+- Jangan ubah nama tabel atau kolom
+- Hindari fitur yang tidak tersedia di SQL Server Standard Edition
+- Jangan sertakan rekomendasi index — itu fitur terpisah
+- Hasil akhir harus berupa 1 stored procedure, bisa langsung dijalankan di SQL Server
+
+**Format jawaban wajib**:
+=== SP_OPTIMIZED ===  
+(Stored procedure versi baru saja, tanpa penjelasan atau rekomendasi tambahan)
+"""
+#     prompt = f"""
+# Saya sedang membangun sistem otomatis untuk optimasi stored procedure SQL Server.
+
+# Berikut adalah definisi stored procedure yang ingin dioptimalkan:
+
+# === BEGIN SP ===
+# {sp_text}
+# === END SP ===
+
+# Berikut informasi tabel-tabel yang digunakan, termasuk kolom dan index yang sudah ada:
+
+# === BEGIN TABLE INFO ===
+# {table_info_text}
+# === END TABLE INFO ===
+
+# Tolong optimalkan stored procedure tersebut agar lebih efisien, **tanpa mengubah hasil akhir atau struktur tabel/schema**.
+
+# Instruksi penting:
+# - Gantilah semua SELECT * dengan daftar kolom eksplisit dari metadata di atas
+# - Jangan ubah nama tabel atau kolom
+# - Hindari fitur yang tidak tersedia di SQL Server Standard Edition
+# - Jika bisa, sertakan juga saran index baru yang relevan (jika belum ada)
+# - Hasil akhir harus bisa langsung dijalankan di SQL Server
+
+# **Format jawaban wajib**:
+# 1. === PENJELASAN ===  
+# (Singkat dan to the point)
+
+# 2. === SP_OPTIMIZED ===  
+# (Stored procedure versi baru)
+
+# 3. === INDEX_RECOMMENDATION ===  
+# (List atau DDL dari index tambahan jika diperlukan)
+
+# Hanya jawab sesuai format di atas. Jangan beri narasi tambahan di luar 3 bagian itu.
+# """
+
+
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    body = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt}
+                ]
+            }
+        ]
+    }
+
+    try:
+        response = requests.post(
+            GEMINI_URL + f"?key={GEMINI_API_KEY}",
+            headers=headers,
+            json=body,
+            timeout=30
+        )
+        response.raise_for_status()
+        content = response.json()
+        return content["candidates"][0]["content"]["parts"][0]["text"]
+    except requests.exceptions.HTTPError as e:
+        print(f"❌ HTTP error from Gemini: {e}")
+    except Exception as e:
+        print(f"❌ Other error from Gemini: {e}")
+    
+    return None
