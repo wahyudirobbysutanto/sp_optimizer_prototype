@@ -72,6 +72,7 @@ EXEC dbo.recommendation_index;
 ```
 
 ## 🗃️ Struktur Folder
+```bash
 ├── app/
 │   ├── indexing/
 │   	├── __init__.py
@@ -102,6 +103,7 @@ EXEC dbo.recommendation_index;
 ├── requirements.txt
 ├── .env                         
 └──  README.md
+```
 
 ## ⚠️ Catatan
 - Pastikan sudah mengaktifkan Full Text Search jika SP mengandung FREETEXTTABLE / CONTAINSTABLE
