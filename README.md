@@ -27,13 +27,20 @@ cd sql-server-optimizer
 
 ```bash
 python -m venv venv
+```
 # Windows:
+```bash
 venv\Scripts\activate
+```
 # Linux/macOS:
+```bash
 source venv/bin/activate
+```
 
 ### 3. Install dependensi
+```bash
 pip install -r requirements.txt
+```
 
 ## ⚙️ Konfigurasi Database
 Buat file .env di root folder:
@@ -42,15 +49,18 @@ SQL_SERVER=localhost
 SQL_DATABASE=AdventureWorks2019
 SQL_USERNAME=your_username
 SQL_PASSWORD=your_password
-
+```
 Gantilah dengan kredensial sesuai environment kamu.
 
 ## ▶️ Menjalankan Aplikasi
 ```bash
 python run_web.py
+```
 
-```bash
 Akses melalui browser:
+```bash
+http://127.0.0.1:5000
+```
 
 ## 🧪 Alur Penggunaan
 1. Klik Analisa Index untuk mendeteksi fragmentasi
@@ -59,6 +69,7 @@ Akses melalui browser:
 4. Jalankan secara manual:
 ```bash
 EXEC dbo.recommendation_index;
+```
 
 ## 🗃️ Struktur Folder
 ├── app/
