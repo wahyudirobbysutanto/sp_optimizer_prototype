@@ -21,6 +21,7 @@ Aplikasi berbasis Flask untuk membantu mengoptimasi performa SQL Server. Sistem 
 ```bash
 git clone https://github.com/username/sql-server-optimizer.git
 cd sql-server-optimizer
+```
 
 ### 2. Buat virtual environment
 
