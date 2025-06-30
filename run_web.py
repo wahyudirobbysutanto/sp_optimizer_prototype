@@ -1,17 +1,19 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
+
 from app.db_connector import connection
 from app.optimization.sp_loader import get_stored_procedures, get_sp_definition, get_tables, get_table_columns
 from app.optimization.sp_optimizer import optimize_stored_procedure, sanitize_sql
 from app.optimization.sp_saver import rename_sp_name, save_optimized_sp, save_sql_to_file
-from app.utils.utils import is_similar_sql, log_result, log_to_sql
 from app.indexing.fragmentation_analyzer import analyze_index_fragmentation, generate_maintenance_sql
 from app.indexing.index_ai import get_index_recommendation
 from app.indexing.sql_executor import execute_sql_statements
 from app.indexing.recommendation_builder import generate_recommendation_procedure
+from app.utils.utils import is_similar_sql, log_result, log_to_sql, extract_table_names_from_sql, get_existing_index_info
+
 from datetime import datetime
 from dotenv import load_dotenv
-
 import os
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -35,86 +37,78 @@ def analyze_index():
     filename = f"index_recommendations_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql"
     save_sql_to_file(maintenance_sql, filename)
 
+    # ← Ambil daftar SP (misalnya pakai fungsi get_stored_procedures)
+    all_sps = get_stored_procedures(connection, db_name)
+    sps_for_ui = [
+        {"schema": sp["schema"], "name": sp["name"]}
+        for sp in all_sps if not sp["is_encrypted"]
+    ]
+
     return render_template(
         "index_result.html",
         index_result=results,
         maintenance_sql=maintenance_sql,
-        ai_ready=False  # ← tanda bahwa AI belum dihitung
+        sp_list=sps_for_ui,
+        ai_ready=False
     )
 
 @app.route("/analyze_ai", methods=["POST"])
 def analyze_ai():
     try:
         db_name = os.getenv("SQL_DATABASE")
-        print(f"[DEBUG] DB name: {db_name}")
-        
-        sps = get_stored_procedures(connection, db_name)
-        print(f"[DEBUG] Found {len(sps)} SP(s)")
-        
-        sps = [sp for sp in sps if not sp['is_encrypted']]
-        if not sps:
-            return jsonify({"ai_suggestions": "-- Tidak ada SP yang bisa dianalisis."})
-        
-        combined_sp_text = ""
-        for sp in sps:
-            try:
-                sp_text = get_sp_definition(connection, db_name, sp['schema'], sp['name'])
-                combined_sp_text += f"-- {sp['schema']}.{sp['name']} --\n{sp_text}\n\n"
-            except Exception as e:
-                print(f"[ERROR] Gagal ambil SP {sp['name']}: {e}")
+        data = request.get_json()
+        selected_sp = data.get("selected_sp")  # Contoh: "Production.uspGetBillOfMaterials"
 
-        tables = get_tables(connection, db_name)
+        if not selected_sp or "." not in selected_sp:
+            return jsonify({"ai_suggestions": "-- SP tidak valid atau tidak dipilih."})
+
+        schema, name = selected_sp.split(".", 1)
+
+        # Ambil isi SP
+        try:
+            sp_text = get_sp_definition(connection, db_name, schema, name)
+        except Exception as e:
+            print(f"[ERROR] Gagal ambil isi SP {selected_sp}: {e}")
+            return jsonify({"ai_suggestions": f"-- Gagal membaca SP: {selected_sp}"})
+
+        # Cari tabel yang digunakan dalam SP
+        table_names = extract_table_names_from_sql(sp_text)
+        # print(sp_text)
+        print(f"[DEBUG] Tabel yang ditemukan di SP: {table_names}")
+        # print(table_names)
+        # exit()
+
+        # Ambil struktur kolom tabel yang ditemukan
         table_info_lines = []
-        for tbl in tables:
+        for table in table_names:
             try:
-                cols = get_table_columns(connection, db_name, tbl['schema'], tbl['table'])
-                line = f"{tbl['schema']}.{tbl['table']} ({', '.join(cols)})"
-                table_info_lines.append(line)
+                sch, tbl = table.split(".", 1)
+                cols = get_table_columns(connection, db_name, sch, tbl)
+                table_info_lines.append(f"{sch}.{tbl} ({', '.join(cols)})")
             except Exception as e:
-                print(f"[ERROR] Gagal ambil kolom untuk {tbl['schema']}.{tbl['table']}: {e}")
-
-        full_table_info = "\n".join(table_info_lines)
-        print(f"[DEBUG] Table info length: {len(full_table_info)}")
-
-        cursor = connection.cursor()
-        cursor.execute("""
-            SELECT 
-                s.name AS schema_name,
-                t.name AS table_name,
-                i.name AS index_name,
-                c.name AS column_name
-            FROM sys.indexes i
-            JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
-            JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
-            JOIN sys.tables t ON i.object_id = t.object_id
-            JOIN sys.schemas s ON t.schema_id = s.schema_id
-            WHERE i.is_primary_key = 0 AND i.is_unique_constraint = 0
-        """)
-        
-        index_lines = []
-        for row in cursor.fetchall():
-            line = f"{row.schema_name}.{row.table_name}.{row.column_name} --> Indexed as [{row.index_name}]"
-            index_lines.append(line)
-
-        existing_index_info = "\n".join(index_lines)
+                print(f"[ERROR] Gagal ambil kolom untuk {table}: {e}")
 
         table_section = "\n".join(table_info_lines)
-        # full_table_info = f"{table_section}\n\n=== EXISTING INDEXES ===\n{existing_index_info}"
 
-        ai_suggestions = get_index_recommendation(combined_sp_text, table_section, existing_index_info)
+        # Ambil index yang sudah ada untuk tabel-tabel tersebut
+        existing_index_info = get_existing_index_info(connection, table_names)
+
+        # Kirim ke AI
+        ai_suggestions = get_index_recommendation(sp_text, table_section, existing_index_info)
 
         if not ai_suggestions:
             ai_suggestions = "-- (Tidak ada rekomendasi AI)"
-        else: 
-            save_sql_to_file(ai_suggestions, "index_ai_recommendations.sql") 
+        else:
+            save_sql_to_file(ai_suggestions, "index_ai_recommendations.sql")
 
         return jsonify({"ai_suggestions": ai_suggestions})
-    
+
     except Exception as e:
         print("❌ ERROR SAAT JALANKAN /analyze_ai:")
         import traceback
         traceback.print_exc()
         return jsonify({"ai_suggestions": f"❌ Internal error: {str(e)}"}), 500
+
 
 @app.route("/build_index_proc", methods=["POST"])
 def build_index_proc():

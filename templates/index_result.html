@@ -31,6 +31,7 @@
         <form method="post" action="/build_index_proc" id="indexForm">
             <input type="hidden" name="ai_used" id="ai_used" value="0">
             <input type="hidden" name="ai_sql" id="ai_sql" value="">
+            <input type="hidden" name="selected_sp_name" id="selected_sp_name" value="">
 
             <div class="row">
                 <!-- Kiri: Fragmentasi Index -->
@@ -81,19 +82,28 @@
                     </div>
                 </div>
 
-                <!-- Kanan: Rekomendasi AI -->
+                <!-- Kanan: AI Rekomendasi -->
                 <div class="col-md-6">
                     <div class="box">
                         <h5>🧠 Rekomendasi Index dari AI</h5>
-                        <p class="text-muted">Klik tombol di bawah untuk memuat saran berdasarkan isi stored procedure dan metadata tabel/index.</p>
-                        <button type="button" class="btn btn-outline-primary btn-sm mb-3" onclick="getAISuggestions()">🔄 Ambil Rekomendasi AI</button>
+                        <p class="text-muted">Pilih stored procedure di bawah lalu klik tombol untuk menganalisis dan menghasilkan saran index.</p>
+                        
+                        <label for="selected_sp" class="form-label">Pilih Stored Procedure:</label>
+                        <select class="form-select form-select-sm mb-2" id="selected_sp">
+                            {% for sp in sp_list %}
+                                <option value="{{ sp.schema }}.{{ sp.name }}">{{ sp.schema }}.{{ sp.name }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <button type="button" class="btn btn-outline-primary btn-sm mb-3" onclick="getAISuggestions()">🔍 Analisa SP</button>
+
                         <pre id="ai-output">Belum dimuat...</pre>
                     </div>
                 </div>
             </div>
 
             <div class="text-center mt-4">
-                <button type="submit" class="btn btn-success">🧾 Proses dan Simpan</button>
+                <button type="submit" class="btn btn-success">🧾 Proses dan Simpan SP</button>
                 <a href="/" class="btn btn-secondary">🔙 Kembali ke Halaman Utama</a>
             </div>
         </form>
@@ -101,14 +111,17 @@
 
     <script>
         function getAISuggestions() {
+            const selectedSP = document.getElementById("selected_sp").value;
             const output = document.getElementById("ai-output");
             const aiUsedInput = document.getElementById("ai_used");
             const aiSqlInput = document.getElementById("ai_sql");
 
             output.innerText = "⏳ Memuat rekomendasi dari AI...";
+
             fetch("/analyze_ai", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" }
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ selected_sp: selectedSP })
             })
             .then(res => {
                 if (!res.ok) throw new Error("Server error");
@@ -125,6 +138,7 @@
                 aiUsedInput.value = "0";
             });
         }
+
     </script>
 </body>
 </html>
