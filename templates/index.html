@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="id">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -33,6 +33,9 @@
     <div class="card">
       <h1 class="text-center">SQL Server Optimizer</h1>
       <div class="d-flex justify-content-center flex-wrap">
+        <form action="/slow-sp" method="get">
+          <button type="submit" class="btn btn-danger btn-option">🐌 Check Slow SP</button>
+        </form>
         <form action="/optimize" method="get">
           <button type="submit" class="btn btn-primary btn-option">⚙️ Optimize Stored Procedures</button>
         </form>

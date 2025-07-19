@@ -11,5 +11,5 @@ def execute_sql_statements(connection, sql_text):
         try:
             cursor.execute(clean_stmt)
         except Exception as e:
-            print(f"❌ Gagal menjalankan:\n{clean_stmt}\n🔺Error: {e}")
+            print(f"❌ Failed to run:\n{clean_stmt}\n🔺Error: {e}")
     connection.commit()

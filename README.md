@@ -1,77 +1,136 @@
 # 🧠 SQL Server Performance Optimizer (Prototype)
 
-Aplikasi berbasis Flask untuk membantu mengoptimasi performa SQL Server. Sistem ini dirancang sebagai prototipe yang dapat mendeteksi fragmentasi index, memberikan rekomendasi perbaikan (REBUILD/REORGANIZE), serta menyarankan index baru berdasarkan isi stored procedure dengan bantuan AI.
+A Flask-based prototype application designed to assist in optimizing SQL Server performance. This system helps detect index fragmentation, provides automated repair suggestions (REBUILD/REORGANIZE), and recommends new indexes using AI based on stored procedure content.
+
+## 🎯 Why This Project Matters
+
+This project showcases how AI can augment traditional DBA workflows — combining query stat analysis, SP parsing, and AI-powered recommendations for practical SQL Server performance improvements.
 
 ---
 
-## 🚀 Fitur Utama
+## 🧰 Tech Stack
 
-- 🔍 Deteksi fragmentasi index secara otomatis
-- 🧠 Rekomendasi index tambahan dari AI (berbasis isi SP & struktur tabel)
-- 📜 Hasil rekomendasi digabung dalam satu Stored Procedure: `recommendation_index`
-- 🛠️ Eksekusi manual melalui SQL Server atau UI Flask
-- 🗂 Logging ke file SQL untuk dokumentasi
+- Python 3.x
+- Flask
+- SQL Server (tested with 2019)
+- Gemini (via API)
+- Jinja2 Templates
+- HTML / Bootstrap
 
 ---
 
-## 📦 Instalasi
+## 🚀 Key Features
 
-### 1. Clone repository
+- 🔍 Automatically detect fragmented indexes
+- 🧠 AI-based index recommendations (based on SP contents & table structure)
+- 📜 Recommendations are consolidated into a single Stored Procedure: `recommendation_index`
+- 🛠️ Manual execution via SQL Server or Flask UI
+- 🗂 Logs recommendations to `.sql` file for documentation
+- ⚙️ SP optimization with AI and visual side-by-side comparison
+- 📈 Display slow stored procedures via SQL Server DMV
+- 🧾 Action logging to `.json` and SQL table
+
+---
+
+## 📦 Installation
+
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/username/sql-server-optimizer.git
-cd sql-server-optimizer
+git clone https://github.com/wahyudirobbysutanto/sp_optimizer_prototype.git
+cd sp_optimizer_prototype
 ```
 
-### 2. Buat virtual environment
+### 2. Create a virtual environment
 
 ```bash
 python -m venv venv
 ```
-# Windows:
+#### Windows:
 ```bash
 venv\Scripts\activate
 ```
-# Linux/macOS:
+#### Linux/macOS:
 ```bash
 source venv/bin/activate
 ```
 
-### 3. Install dependensi
+### 3. Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-## ⚙️ Konfigurasi Database
-Buat file .env di root folder:
+---
+
+## ⚙️ Database Configuration
+Create a `.env` file in the root folder:
 ```bash
 SQL_SERVER=localhost
 SQL_DATABASE=AdventureWorks2019
 SQL_USERNAME=your_username
 SQL_PASSWORD=your_password
 ```
-Gantilah dengan kredensial sesuai environment kamu.
 
-## ▶️ Menjalankan Aplikasi
+Replace with your SQL Server credentials.
+
+---
+
+## ▶️ Running the Application
 ```bash
 python run_web.py
 ```
 
-Akses melalui browser:
+Open in your browser:
 ```bash
 http://127.0.0.1:5000
 ```
 
-## 🧪 Alur Penggunaan
-1. Klik Analisa Index untuk mendeteksi fragmentasi
-2. (Opsional) Klik Ambil Rekomendasi AI untuk melihat saran index tambahan
-3. Klik Buat Stored Procedure untuk menyimpan semua perintah sebagai dbo.recommendation_index
-4. Jalankan secara manual:
-```bash
+---
+
+## 🧪 Usage Flow
+
+1. Click "Check Index Fragmentation" to detect fragmented indexes
+2. (Optional) Click "Get AI Recommendations" to see additional suggested indexes
+3. Click "Save as Stored Procedure" to create `dbo.recommendation_index`
+4. Run manually:
+```sql
 EXEC dbo.recommendation_index;
 ```
 
-## 🗃️ Struktur Folder
+---
+
+## 📄 Example Output
+
+A sample result from AI + fragmentation recommendations saved into a stored procedure:
+
+```sql
+CREATE NONCLUSTERED INDEX IX_Production_Product_ProductID
+ON Production.Product (ProductID);
+CREATE NONCLUSTERED INDEX IX_Production_BillOfMaterials_ComponentID
+ON Production.BillOfMaterials (ComponentID);
+
+ALTER INDEX PK_Product_ProductID ON Production.Product REBUILD;
+```
+
+---
+
+## 🖼️ Demo Screenshots
+
+### Index Fragmentation Results
+![Fragmentation UI](images/fragmentation_ui.png)
+
+### AI-based Index Recommendations
+![AI Recommendation](images/ai_index_recommendation.png)
+
+### Optimized Stored Procedure View
+![SP Optimization](images/sp_optimization_ui.png)
+
+### Optimized Stored Procedure View
+![Index Recommendation Result](images/index_recommendation_result.png)
+
+
+
+## 🗃️ Folder Structure
 ```bash
 ├── app/
 │   ├── indexing/
@@ -88,27 +147,54 @@ EXEC dbo.recommendation_index;
 │   	└── sp_saver.py
 │   └── utils/
 │   	├── __init__.py
-│   	├── loggerloader.py
+│   	├── logger.py
 │   	└── utilssaver.py
-├── outputs/
+├── samples/                            # 📁 Sample SP and outputs
+│   ├── CustomerSearchLog.sql        
+│   ├── generate_fragmentation.sql       
+│   ├── uspFindCustomersByRegion.sql        
+│   ├── uspGetOrdersByCustomer.sql        
+│   └── uspGetProductSalesInfo.sql       
+├── logs/                               # 📁 Sample SP and outputs
+│   └── log_activity.json
+├── outputs/                            # 📁 AI SQL recommendation files
 ├── templates/ 
 │   ├── execution_result.html
 │   ├── index.html
-│   ├── index_resultresult.html
+│   ├── index_result.html
 │   ├── optimize.html
 │   ├── result.html
 │   ├── save_result.html
+│   ├── slow_sp.html
 │   └── save_result_optimize.html
 ├── run_web.py                   
 ├── requirements.txt
 ├── .env                         
-└──  README.md
+└── README.md
 ```
+---
 
-## ⚠️ Catatan
-- Pastikan sudah mengaktifkan Full Text Search jika SP mengandung FREETEXTTABLE / CONTAINSTABLE
-- Rekomendasi AI tidak mengubah SP dan hanya memberi saran index tambahan
-- Eksekusi tetap manual dan tidak diaktifkan otomatis
+## ⚠️ Notes
 
-## 📜 Lisensi
-MIT License – Bebas digunakan untuk pembelajaran, eksperimen, dan pengembangan internal.
+- Ensure Full Text Search is enabled if your SPs use `FREETEXTTABLE` / `CONTAINSTABLE`
+- AI recommendations do **not** modify SP logic, only suggest indexes
+- Stored procedure execution is manual and not triggered automatically
+- Optimized SPs are saved with `_optimized` suffix for clarity
+
+---
+
+## 📬 Contact & Feedback
+
+If you have questions, suggestions, or want to collaborate, feel free to reach out:
+
+- 💼 LinkedIn: [Wahyudi Robby Sutanto](https://www.linkedin.com/in/wahyudirs/)
+- 📧 Email: wahyudirobbysutanto@gmail.com
+- 🐙 GitHub: [@wahyudirobbysutanto](https://github.com/wahyudirobbysutanto)
+
+Feedback and contributions are welcome!
+
+
+---
+
+## 📜 License
+MIT License – Free to use for learning, experimentation, and internal development.

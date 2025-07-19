@@ -1,5 +1,27 @@
 import pyodbc
 
+def get_slow_sp(connection):
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT TOP 50 
+            DB_NAME(st.dbid) AS database_name,
+            OBJECT_NAME(st.objectid, st.dbid) AS object_name,
+            qs.total_worker_time / qs.execution_count AS avg_cpu_time,
+            qs.total_elapsed_time / qs.execution_count AS avg_elapsed_time,
+            qs.execution_count,
+            qs.total_elapsed_time,
+            qs.creation_time,
+            st.text AS sql_text
+        FROM sys.dm_exec_query_stats qs
+        CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) st
+        WHERE st.objectid IS NOT NULL
+        ORDER BY avg_elapsed_time DESC
+    """)
+    results = cursor.fetchall()
+    columns = [desc[0] for desc in cursor.description]
+    return [dict(zip(columns, row)) for row in results]
+
+
 def get_all_databases(connection):
     cursor = connection.cursor()
     cursor.execute("SELECT name FROM sys.databases WHERE database_id > 4")  # skip system DBs

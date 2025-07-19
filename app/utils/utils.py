@@ -93,4 +93,4 @@ def log_to_sql(connection, sp_name, status, similarity=None, note=None):
         """, (sp_name, status, similarity, note))
         connection.commit()
     except Exception as e:
-        print(f"⚠️ Gagal log ke database: {e}")
+        print(f"⚠️ Failed to log into database: {e}")

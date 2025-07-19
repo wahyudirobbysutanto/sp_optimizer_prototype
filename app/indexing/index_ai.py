@@ -2,8 +2,13 @@ from app.gemini_client import ask_gemini
 import re
 
 def get_index_recommendation(sp_texts, table_info_text, existing_index_info):
-    prompt = f"""Berikan rekomendasi index tambahan berdasarkan isi stored procedure dan struktur tabel berikut. 
-Jangan sarankan index yang sudah ada. Format hasil dalam bentuk SQL (CREATE NONCLUSTERED INDEX).
+    prompt = f"""You are a SQL performance tuning expert.
+
+Please analyze the stored procedure and table definitions below. Recommend additional non-clustered indexes to improve query performance. Focus on WHERE, JOIN, and ORDER BY clauses.
+
+Only suggest indexes that are not already present.
+
+Output only the SQL commands to create the suggested indexes, using this naming convention: IX_<Table>_<Column>. Use one index per column (no multi-column indexes unless absolutely necessary).
 
 === STORED PROCEDURES ===
 {sp_texts}
@@ -13,10 +18,9 @@ Jangan sarankan index yang sudah ada. Format hasil dalam bentuk SQL (CREATE NONC
 
 === EXISTING INDEXES ===
 {existing_index_info}
-
-Tampilkan hanya index yang **belum ada**, gunakan format nama index: IX_<Table>_<Column>.
-
     """
+
+    print(prompt)
 #     prompt = f"""
 # Saya sedang membangun sistem analisis index untuk SQL Server.
 

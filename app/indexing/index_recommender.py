@@ -30,5 +30,5 @@ def get_missing_indexes(connection, db_name=None):
             columns = [col[0] for col in cursor.description]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
     except Exception as e:
-        print("❌ Gagal mengambil rekomendasi index:", e)
+        print("❌ Failed to get Index Recommendation:", e)
         return []

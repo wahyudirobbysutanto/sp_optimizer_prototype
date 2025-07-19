@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 from app.db_connector import connection
-from app.optimization.sp_loader import get_stored_procedures, get_sp_definition, get_tables, get_table_columns
+from app.optimization.sp_loader import get_stored_procedures, get_sp_definition, get_tables, get_table_columns, get_slow_sp
 from app.optimization.sp_optimizer import optimize_stored_procedure, sanitize_sql
 from app.optimization.sp_saver import rename_sp_name, save_optimized_sp, save_sql_to_file
 from app.indexing.fragmentation_analyzer import analyze_index_fragmentation, generate_maintenance_sql
@@ -9,6 +9,7 @@ from app.indexing.index_ai import get_index_recommendation
 from app.indexing.sql_executor import execute_sql_statements
 from app.indexing.recommendation_builder import generate_recommendation_procedure
 from app.utils.utils import is_similar_sql, log_result, log_to_sql, extract_table_names_from_sql, get_existing_index_info
+from app.utils.logger import log_action
 
 from datetime import datetime
 from dotenv import load_dotenv
@@ -60,7 +61,7 @@ def analyze_ai():
         selected_sp = data.get("selected_sp")  # Contoh: "Production.uspGetBillOfMaterials"
 
         if not selected_sp or "." not in selected_sp:
-            return jsonify({"ai_suggestions": "-- SP tidak valid atau tidak dipilih."})
+            return jsonify({"ai_suggestions": "-- SP is invalid or not selected."})
 
         schema, name = selected_sp.split(".", 1)
 
@@ -68,13 +69,13 @@ def analyze_ai():
         try:
             sp_text = get_sp_definition(connection, db_name, schema, name)
         except Exception as e:
-            print(f"[ERROR] Gagal ambil isi SP {selected_sp}: {e}")
-            return jsonify({"ai_suggestions": f"-- Gagal membaca SP: {selected_sp}"})
+            print(f"[ERROR] Failed to retrieve SP contents {selected_sp}: {e}")
+            return jsonify({"ai_suggestions": f"-- Failed to read SP: {selected_sp}"})
 
         # Cari tabel yang digunakan dalam SP
         table_names = extract_table_names_from_sql(sp_text)
         # print(sp_text)
-        print(f"[DEBUG] Tabel yang ditemukan di SP: {table_names}")
+        print(f"[DEBUG] Tables found in SP: {table_names}")
         # print(table_names)
         # exit()
 
@@ -86,7 +87,7 @@ def analyze_ai():
                 cols = get_table_columns(connection, db_name, sch, tbl)
                 table_info_lines.append(f"{sch}.{tbl} ({', '.join(cols)})")
             except Exception as e:
-                print(f"[ERROR] Gagal ambil kolom untuk {table}: {e}")
+                print(f"[ERROR] Failed to fetch column for {table}: {e}")
 
         table_section = "\n".join(table_info_lines)
 
@@ -97,14 +98,14 @@ def analyze_ai():
         ai_suggestions = get_index_recommendation(sp_text, table_section, existing_index_info)
 
         if not ai_suggestions:
-            ai_suggestions = "-- (Tidak ada rekomendasi AI)"
+            ai_suggestions = "-- (No AI recommendations)"
         else:
             save_sql_to_file(ai_suggestions, "index_ai_recommendations.sql")
 
         return jsonify({"ai_suggestions": ai_suggestions})
 
     except Exception as e:
-        print("❌ ERROR SAAT JALANKAN /analyze_ai:")
+        print("❌ ERROR WHILE RUNNING /analyze_ai:")
         import traceback
         traceback.print_exc()
         return jsonify({"ai_suggestions": f"❌ Internal error: {str(e)}"}), 500
@@ -114,10 +115,12 @@ def analyze_ai():
 def build_index_proc():
     db_name = os.getenv("SQL_DATABASE")
 
+
     # Analisis fragmentasi terbaru
     frag_results = analyze_index_fragmentation(connection, db_name)
     frag_results = [r for r in frag_results if r["recommendation"] in ("REBUILD", "REORGANIZE")]
     frag_sql = generate_maintenance_sql(frag_results)
+
 
     # Baca AI suggestions jika tersedia
     ai_sql = ""
@@ -125,18 +128,14 @@ def build_index_proc():
         with open("outputs/index_ai_recommendations.sql", "r", encoding="utf-8") as f:
             ai_sql = f.read().strip()
     except FileNotFoundError:
-        print("❗ File AI recommendation tidak ditemukan. Lewati AI index.")
+        print("❗ AI recommendation file not found. Skip AI index.")
 
     # Gabungkan SQL
     final_sql = frag_sql.strip()
-    
-    print(final_sql)
-    
-    if ai_sql:
-        final_sql += "\n\n-- AI Suggestions --\n" + ai_sql
 
-    print("asdqwe")
-    print(final_sql)
+    if ai_sql and request.form.get("ai_used") == "1":
+        final_sql += "\n\n-- AI Suggestions --\n" + ai_sql
+    
     
     # Siapkan SQL untuk membuat SP recommendation_index
     sp_sql = f"""
@@ -155,15 +154,61 @@ def build_index_proc():
     END
     ');
     """
+    # print("xxxxx")
+    # print(frag_results)
+
+    if final_sql == "":
+        db_name = os.getenv("SQL_DATABASE")
+        results = analyze_index_fragmentation(connection, db_name)
+        results = [r for r in results if r["recommendation"] in ("REBUILD", "REORGANIZE")]
+        
+        maintenance_sql = generate_maintenance_sql(results)
+        execute_sql_statements(connection, maintenance_sql)
+        
+        filename = f"index_recommendations_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql"
+        save_sql_to_file(maintenance_sql, filename)
+
+        # ← Ambil daftar SP (misalnya pakai fungsi get_stored_procedures)
+        all_sps = get_stored_procedures(connection, db_name)
+        sps_for_ui = [
+            {"schema": sp["schema"], "name": sp["name"]}
+            for sp in all_sps if not sp["is_encrypted"]
+        ]
+        return render_template(
+            "index_result.html",
+            index_result=results,
+            maintenance_sql=maintenance_sql,
+            sp_list=sps_for_ui,
+            ai_ready=False
+        )
+
 
     try:
         save_optimized_sp(connection, sp_sql)
         # return "✅ Stored Procedure <code>recommendation_index</code> berhasil dibuat!"
+
+        save_sql_to_file(sp_sql, "recommendation_index.sql")
+
+        log_action(
+            action="Index Optimization + AI Index Recommendation",
+            sp_name="dbo.recommendation_index",
+            status="success",
+            details=f"Optimized version saved as dbo.recommendation_index"
+        )
+
         return render_template("save_result_optimize.html", sp_sql=sp_sql)
 
     except Exception as e:
-        print(f"❌ Gagal membuat SP: {e}")
-        return f"❌ Gagal membuat SP: {str(e)}", 500
+        print(f"❌ Failed to create SP: {e}")
+
+        log_action(
+            action="Index Optimization + AI Index Recommendation",
+            sp_name="dbo.recommendation_index",
+            status="error",
+            details=str(e)
+        )
+
+        return f"❌ Failed to create SP: {str(e)}", 500
 
 @app.route("/execute_recommendation_index", methods=["POST"])
 def execute_recommendation_index():
@@ -173,12 +218,12 @@ def execute_recommendation_index():
         cursor.execute(f"USE [{db_name}]; EXEC dbo.recommendation_index;")
         connection.commit()
 
-        result_message = "✅ Stored Procedure berhasil dijalankan."
+        result_message = "✅ Stored Procedure executed successfully."
         return render_template("execution_result.html", result=result_message)
 
     except Exception as e:
-        error_message = f"❌ Gagal menjalankan SP: {str(e)}"
-        print("❌ Gagal eksekusi SP:", e)
+        error_message = f"❌ Failed to run SP: {str(e)}"
+        print("❌ Failed to run SP:", e)
         return render_template("execution_result.html", result=error_message), 500
 
 
@@ -322,13 +367,13 @@ def optimize():
     sp_full = request.form.get("sp_name")
 
     if not sp_full or "." not in sp_full:
-        return "❌ Data SP tidak valid. Harap pilih SP dari daftar."
+        return "❌ Invalid SP data. Please select SP from the list."
 
     schema, name = sp_full.split(".")
 
     sp_text = get_sp_definition(connection, db_name, schema, name)
     if not sp_text:
-        return f"Gagal ambil definisi SP {schema}.{name}"
+        return f"Failed to retrieve SP definition {schema}.{name}"
 
     tables = get_tables(connection, db_name)
     table_info_lines = []
@@ -340,10 +385,11 @@ def optimize():
 
     optimized_sql = optimize_stored_procedure(sp_text, table_info)
     if not optimized_sql:
-        return "❌ Optimasi gagal (AI tidak memberi respon)."
+        return "❌ Optimization failed (AI did not respond)."
 
     optimized_sql = sanitize_sql(optimized_sql)
-    print(optimized_sql)
+    optimized_sql = optimized_sql.replace("=== END SP_OPTIMIZED ===", "")
+    optimized_sql = optimized_sql.replace("=== SP_OPTIMIZED ===", "")
 
     similar, ratio = is_similar_sql(sp_text, optimized_sql)
 
@@ -362,7 +408,14 @@ def save():
     success = save_optimized_sp(connection, optimized_sql)
     status = "success" if success else "fail"
 
-    log_to_sql(connection, name, status)
+    # log_to_sql(connection, name, status)
+    
+    log_action(
+        action="Index Optimization + AI Index Recommendation",
+        sp_name=new_name,
+        status=status,
+        details=f"Optimized version saved as {new_name}"
+    )
 
     return render_template(
         "save_result.html",
@@ -416,6 +469,12 @@ def save():
 #     status = "success" if save_optimized_sp(connection, optimized_sql) else "fail"
 #     log_to_sql(connection, name, status)
 #     return redirect("/")
+
+@app.route("/slow-sp")
+def slow_sp():
+    data = get_slow_sp(connection)
+    return render_template("slow_sp.html", rows=data)
+
 
 if __name__ == "__main__":
     app.run(debug=True)

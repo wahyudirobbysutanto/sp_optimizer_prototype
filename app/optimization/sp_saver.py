@@ -29,10 +29,10 @@ def save_sql_to_file(sql_text, filename, folder="outputs"):
 
         with open(full_path, "w", encoding="utf-8") as f:
             f.write(sql_text)
-        print(f"💾 SQL disimpan ke file: {full_path}")
+        print(f"💾 The SQL is saved to a file: {full_path}")
         return full_path
     except Exception as e:
-        print(f"❌ Gagal menyimpan ke file {filename}:", e)
+        print(f"❌ Failed to save to file {filename}:", e)
         return None
 
 
@@ -45,7 +45,7 @@ def rename_sp_name(sp_sql):
     match = re.search(pattern, sp_sql.replace('\r', '').replace('\n', ' '))
 
     if not match:
-        raise ValueError("❌ Tidak bisa menemukan nama stored procedure.")
+        raise ValueError("❌ Could not find stored procedure name.")
 
     original_name = match.group(1).split('.')[-1].strip('[]')
     new_name = f"{original_name}_Opt_{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -63,7 +63,8 @@ def rename_sp_name(sp_sql):
 
 
 
-def save_optimized_sp(connection, optimized_sql, overwrite=True, db_name=None):
+def save_optimized_sp(connection, optimized_sql, overwrite=True, db_name=None):    
+    print(optimized_sql)
     cursor = connection.cursor()
     try:
         if db_name is None:
@@ -79,15 +80,15 @@ def save_optimized_sp(connection, optimized_sql, overwrite=True, db_name=None):
                 try:
                     cursor.execute(drop_stmt)
                 except Exception as e:
-                    print(f"⚠️ Gagal DROP SP lama (mungkin belum ada): {e}")
+                    print(f"⚠️ Failed to DROP old SP (may not exist yet): {e}")
         
         # Eksekusi SP hasil Gemini
         cursor.execute(optimized_sql)
         connection.commit()
-        print(f"✅ SP berhasil disimpan ke database '{db_name}'.")
+        print(f"✅ SP successfully saved to database '{db_name}'.")
         return True
     except Exception as e:
-        print("❌ Gagal menyimpan SP hasil optimasi:", e)
+        print("❌ Failed to save SP optimization results:", e)
         return False
 
 

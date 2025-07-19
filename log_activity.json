@@ -1,0 +1,380 @@
+[
+    {
+        "timestamp": "2025-07-19T16:53:49.845196",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "uspGetProductSalesInfo_Opt_20250719165349",
+        "status": "fail",
+        "details": "Optimized version saved as uspGetProductSalesInfo_Opt_20250719165349"
+    },
+    {
+        "timestamp": "2025-07-19T16:55:19.049397",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "uspGetProductSalesInfo_Opt_20250719165519",
+        "status": "fail",
+        "details": "Optimized version saved as uspGetProductSalesInfo_Opt_20250719165519"
+    },
+    {
+        "timestamp": "2025-07-19T16:56:27.745686",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "uspGetProductSalesInfo_Opt_20250719165627",
+        "status": "fail",
+        "details": "Optimized version saved as uspGetProductSalesInfo_Opt_20250719165627"
+    },
+    {
+        "timestamp": "2025-07-19T16:57:10.846269",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "uspGetProductSalesInfo_Opt_20250719165710",
+        "status": "fail",
+        "details": "Optimized version saved as uspGetProductSalesInfo_Opt_20250719165710"
+    },
+    {
+        "timestamp": "2025-07-19T16:57:59.834014",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "uspGetProductSalesInfo_Opt_20250719165759",
+        "status": "fail",
+        "details": "Optimized version saved as uspGetProductSalesInfo_Opt_20250719165759"
+    },
+    {
+        "timestamp": "2025-07-19T16:59:16.371636",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "uspGetProductSalesInfo_Opt_20250719165916",
+        "status": "fail",
+        "details": "Optimized version saved as uspGetProductSalesInfo_Opt_20250719165916"
+    },
+    {
+        "timestamp": "2025-07-19T17:00:34.290651",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:02:43.570877",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:03:08.387082",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:03:17.380811",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:03:34.543933",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:04:33.167283",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:04:38.234697",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:04:50.827476",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:06:13.127168",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:07:33.889294",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:07:41.086795",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:08:19.516749",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:10:37.258007",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:14:11.873618",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:14:19.947369",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:14:25.326201",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:15:55.655963",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:16:15.261896",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:16:25.201485",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:17:08.762757",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:20:46.135972",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:20:48.562800",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:21:14.650634",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:21:46.050873",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:21:51.720289",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:22:03.316271",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:22:18.401962",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:22:44.729313",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:23:27.038767",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:23:57.387410",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:23:58.674859",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:24:05.341701",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:24:11.378497",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:24:18.427352",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:24:21.480494",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:35:01.750482",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:35:09.450445",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:36:38.809504",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:36:52.162892",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:37:04.711893",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:37:18.482197",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:37:31.534791",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:42:35.298607",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:43:20.499514",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:44:40.168387",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:45:06.933167",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:45:17.078549",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    },
+    {
+        "timestamp": "2025-07-19T17:45:24.349689",
+        "action": "Index Optimization + AI Index Recommendation",
+        "sp_name": "dbo.recommendation_index",
+        "status": "success",
+        "details": "Optimized version saved as dbo.recommendation_index"
+    }
+]
