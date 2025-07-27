@@ -4,7 +4,7 @@ A Flask-based prototype application designed to assist in optimizing SQL Server 
 
 ## 🎯 Why This Project Matters
 
-This project showcases how AI can augment traditional DBA workflows — combining query stat analysis, SP parsing, and AI-powered recommendations for practical SQL Server performance improvements.
+This project showcases how AI can augment traditional DBA workflows, for practical SQL Server performance improvements, ultimately reducing query times, preventing system slowdowns, and saving developer hours on manual optimization.
 
 ---
 
