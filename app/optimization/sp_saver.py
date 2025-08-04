@@ -64,7 +64,7 @@ def rename_sp_name(sp_sql):
 
 
 def save_optimized_sp(connection, optimized_sql, overwrite=True, db_name=None):    
-    print(optimized_sql)
+    
     cursor = connection.cursor()
     try:
         if db_name is None:

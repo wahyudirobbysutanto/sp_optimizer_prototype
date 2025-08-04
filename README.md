@@ -1,10 +1,16 @@
 # 🧠 SQL Server Performance Optimizer (Prototype)
 
-A Flask-based prototype application designed to assist in optimizing SQL Server performance. This system helps detect index fragmentation, provides automated repair suggestions (REBUILD/REORGANIZE), and recommends new indexes using AI based on stored procedure content.
+A Flask-based prototype application to help analyze and optimize SQL Server performance.
+It can scan multiple databases, detect index fragmentation, analyze stored procedures, and generate AI-based optimization suggestions.
 
 ## 🎯 Why This Project Matters
 
-This project showcases how AI can augment traditional DBA workflows, for practical SQL Server performance improvements, ultimately reducing query times, preventing system slowdowns, and saving developer hours on manual optimization.
+This tool demonstrates how AI can complement traditional DBA workflows by:
+
+- Reducing query execution time
+- Highlighting fragmented indexes across all databases
+- Suggesting indexes based on stored procedure usage
+- Helping developers avoid time-consuming manual optimization
 
 ---
 
@@ -21,14 +27,26 @@ This project showcases how AI can augment traditional DBA workflows, for practic
 
 ## 🚀 Key Features
 
-- 🔍 Automatically detect fragmented indexes
-- 🧠 AI-based index recommendations (based on SP contents & table structure)
-- 📜 Recommendations are consolidated into a single Stored Procedure: `recommendation_index`
-- 🛠️ Manual execution via SQL Server or Flask UI
-- 🗂 Logs recommendations to `.sql` file for documentation
-- ⚙️ SP optimization with AI and visual side-by-side comparison
-- 📈 Display slow stored procedures via SQL Server DMV
-- 🧾 Action logging to `.json` and SQL table
+- 🔍 Detect fragmented indexes across **multiple databases**
+- 🧠 AI-based index recommendations using:
+  - Stored procedure content
+  - Table columns
+  - Existing index metadata
+- 📜 Consolidate recommendations into a single stored procedure: `recommendation_index` that saved patent on TestDB
+- ⚙️ Stored procedure optimization with side-by-side comparison
+- 📈 Detect slow stored procedures via SQL Server DMVs
+- 🗂 Save recommendations to `.sql`, `.json`, and a log table
+
+---
+
+## New (2025) Improvements
+
+- Support for **multi-database stored procedures** (cross-database joins)
+- Improved table extraction from stored procedure text:
+  - Auto-detects `db.schema.table`, `schema.table`, and bare `table`
+  - Auto-expands schema and database if missing
+- Pulls **table column metadata and existing indexes** from all involved databases
+- **Select2-powered stored procedure picker** for quick searching in the UI
 
 ---
 
@@ -66,7 +84,7 @@ pip install -r requirements.txt
 Create a `.env` file in the root folder:
 ```bash
 SQL_SERVER=localhost
-SQL_DATABASE=AdventureWorks2019
+SQL_DATABASE=master
 SQL_USERNAME=your_username
 SQL_PASSWORD=your_password
 ```
@@ -87,30 +105,48 @@ http://127.0.0.1:5000
 
 ---
 
+---
+
 ## 🧪 Usage Flow
 
-1. Click "Check Index Fragmentation" to detect fragmented indexes
-2. (Optional) Click "Get AI Recommendations" to see additional suggested indexes
-3. Click "Save as Stored Procedure" to create `dbo.recommendation_index`
-4. Run manually:
-```sql
-EXEC dbo.recommendation_index;
-```
+1. **Check Index Fragmentation**  
+   Detects indexes needing REBUILD/REORGANIZE across all accessible databases
+2. **Select a Stored Procedure**  
+   (Now supports `database.schema.procname`)
+3. **Analyze with AI**  
+   - Recommends indexes based on SP joins and filters
+   - Suggests replacing `SELECT *` with explicit columns
+4. **Save as Stored Procedure**  
+   Creates `TestDB.dbo.recommendation_index` with combined recommendations
+
+---
 
 ---
 
 ## 📄 Example Output
 
-A sample result from AI + fragmentation recommendations saved into a stored procedure:
+Sample recommendations:
 
 ```sql
-CREATE NONCLUSTERED INDEX IX_Production_Product_ProductID
-ON Production.Product (ProductID);
-CREATE NONCLUSTERED INDEX IX_Production_BillOfMaterials_ComponentID
-ON Production.BillOfMaterials (ComponentID);
+ALTER INDEX [IX_TransactionHistory_ReferenceOrderID_ReferenceOrderLineID] ON [AdventureWorks2022].[Production].[TransactionHistory] REBUILD;
+ALTER INDEX [IX_TransactionHistory_ProductID] ON [AdventureWorks2022].[Production].[TransactionHistory] REBUILD;
+ALTER INDEX [XMLPROPERTY_Person_Demographics] ON [AdventureWorks2022].[Person].[Person] REORGANIZE;
+ALTER INDEX [XMLVALUE_Person_Demographics] ON [AdventureWorks2022].[Person].[Person] REORGANIZE;
+ALTER INDEX [IX_TransactionHistory_ReferenceOrderID_ReferenceOrderLineID] ON [AdventureWorks2019].[Production].[TransactionHistory] REBUILD;
+ALTER INDEX [IX_TransactionHistory_ProductID] ON [AdventureWorks2019].[Production].[TransactionHistory] REBUILD;
+ALTER INDEX [PK__DailyPri__8A546FD33D9E534C] ON [swing_trading_new].[dbo].[DailyPrice] REBUILD;
+ALTER INDEX [PK__Screenin__3213E83FA640DA6C] ON [swing_trading_new].[dbo].[ScreeningResults_New] REORGANIZE;
 
-ALTER INDEX PK_Product_ProductID ON Production.Product REBUILD;
+-- AI Suggestions --
+CREATE NONCLUSTERED INDEX IX_Orders_CustomerID ON SalesDB.dbo.Orders (CustomerID);
+CREATE NONCLUSTERED INDEX IX_Orders_ProductID ON SalesDB.dbo.Orders (ProductID);
+CREATE NONCLUSTERED INDEX IX_Payments_OrderID ON FinanceDB.dbo.Payments (OrderID);
+CREATE NONCLUSTERED INDEX IX_TaxRates_Region ON FinanceDB.dbo.TaxRates (Region);
+CREATE NONCLUSTERED INDEX IX_Customers_CustomerName ON SalesDB.dbo.Customers (CustomerName);
+CREATE NONCLUSTERED INDEX IX_Payments_PaymentDate ON FinanceDB.dbo.Payments (PaymentDate);
 ```
+
+---
 
 ---
 
@@ -127,6 +163,10 @@ ALTER INDEX PK_Product_ProductID ON Production.Product REBUILD;
 
 ### Optimized Stored Procedure View
 ![Index Recommendation Result](images/index_recommendation_result.png)
+
+### Compare Optimized Stored Procedure Before and After
+![Before](images/before.png)
+![After](images/after.png)
 
 
 
@@ -176,10 +216,12 @@ ALTER INDEX PK_Product_ProductID ON Production.Product REBUILD;
 
 ## ⚠️ Notes
 
-- Ensure Full Text Search is enabled if your SPs use `FREETEXTTABLE` / `CONTAINSTABLE`
-- AI recommendations do **not** modify SP logic, only suggest indexes
-- Stored procedure execution is manual and not triggered automatically
-- Optimized SPs are saved with `_optimized` suffix for clarity
+- Ensure your SQL Server login has `VIEW DEFINITION` access to all databases you want to scan
+- AI suggestions do not change logic; they only:
+  - Replace `SELECT *`
+  - Suggest better joins
+  - Recommend indexes
+- Optimized procedures are saved with `_optimized` suffix
 
 ---
 

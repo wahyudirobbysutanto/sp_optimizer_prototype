@@ -2,7 +2,7 @@ import pyodbc
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 server = os.getenv("SQL_SERVER")
 database = os.getenv("SQL_DATABASE")

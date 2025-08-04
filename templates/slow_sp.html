@@ -9,7 +9,7 @@
     <div class="container py-5">
       <h1 class="mb-4 text-center">📊 Slow Stored Procedures</h1>
       
-      {% if results %}
+      {% if rows %}
         <table class="table table-striped">
           <thead>
             <tr>
@@ -20,12 +20,12 @@
             </tr>
           </thead>
           <tbody>
-            {% for row in results %}
+            {% for row in rows %}
               <tr>
-                <td>{{ row.name }}</td>
+                <td>{{ row.object_name }}</td>
                 <td>{{ row.execution_count }}</td>
-                <td>{{ row.avg_duration }}</td>
-                <td>{{ row.last_execution }}</td>
+                <td>{{ row.avg_elapsed_time }}</td>
+                <td>{{ row.creation_time }}</td>
               </tr>
             {% endfor %}
           </tbody>

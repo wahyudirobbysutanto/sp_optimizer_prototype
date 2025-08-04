@@ -15,8 +15,8 @@
     <div class="container shadow bg-white p-4 rounded text-center">
         {% if status == "success" %}
             <h2 class="text-success mb-3">✅ Optimization Saved Successfully</h2>
-            <p>Stored Procedure <strong>{{ original_name }}</strong> has been saved as:</p>
-            <h4 class="text-primary">{{ new_sp_name }}</h4>
+            <p>Stored Procedure <strong>{{db_name}}.{{ original_name }}</strong> has been saved as:</p>
+            <h4 class="text-primary">{{db_name}}.{{ new_sp_name }}</h4>
         {% else %}
             <h2 class="text-danger">❌ Failed to Save SP</h2>
             <p>An error occurred while saving to the database <strong>{{ db_name }}</strong>.</p>

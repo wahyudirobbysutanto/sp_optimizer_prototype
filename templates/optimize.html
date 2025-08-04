@@ -36,7 +36,7 @@
           <label for="sp_name" class="form-label">Stored Procedure</label>
           <select class="form-select js-select2" name="sp_name" id="sp_name" required>
             {% for sp in stored_procedures %}
-              <option value="{{ sp['schema'] }}.{{ sp['name'] }}">{{ sp['schema'] }}.{{ sp['name'] }}</option>
+              <option value="{{ sp['full_name'] }}">{{ sp['full_name'] }}</option>
             {% endfor %}
           </select>
         </div>

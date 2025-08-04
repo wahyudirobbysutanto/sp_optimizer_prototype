@@ -3,7 +3,7 @@ import os
 def get_missing_indexes(connection, db_name=None):
     if not db_name:
         from dotenv import load_dotenv
-        load_dotenv()
+        load_dotenv(override=True)
         db_name = os.getenv("SQL_DATABASE")
         
     try:

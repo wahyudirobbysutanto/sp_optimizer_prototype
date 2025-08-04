@@ -29,7 +29,7 @@
 <body>
     <div class="container shadow bg-white p-4 rounded">
         <h2 class="text-center mb-3">🔎 Stored Procedure Optimization Result</h2>
-        <p class="text-center text-muted">Stored Procedure: <strong>{{ schema }}.{{ name }}</strong></p>
+        <p class="text-center text-muted">Stored Procedure: <strong>{{ database_name }}.{{ schema }}.{{ name }}</strong></p>
 
         <div class="alert alert-info text-center">
             Similarity with original version: <strong>{{ similarity }}%</strong>
@@ -47,6 +47,7 @@
             <input type="hidden" name="sql" value="{{ optimized }}">
             <input type="hidden" name="name" value="{{ name }}">
             <input type="hidden" name="schema" value="{{ schema }}">
+            <input type="hidden" name="database_name" value="{{ database_name }}">
             <div class="d-flex justify-content-between">
                 <button type="submit" class="btn btn-success">💾 Save Optimization</button>
                 <a href="/optimize" class="btn btn-secondary">🔙 Back to Main Page</a>

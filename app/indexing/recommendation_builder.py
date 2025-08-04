@@ -1,10 +1,10 @@
-from app.indexing.fragmentation_analyzer import analyze_index_fragmentation, generate_maintenance_sql
+from app.indexing.fragmentation_analyzer import generate_maintenance_sql
 from app.indexing.index_ai import get_index_recommendation
 from app.optimization.sp_loader import get_stored_procedures, get_sp_definition, get_tables, get_table_columns
 
 def generate_recommendation_procedure(connection, database):
     # 1. Dapatkan SQL Rebuild/Reorganize
-    frag_results = analyze_index_fragmentation(connection, database)
+    frag_results = analyze_index_fragmentation_all(connection)
     maintenance_sql = generate_maintenance_sql(frag_results)
 
     # 2. Ambil semua SP dan info tabel
@@ -35,6 +35,9 @@ def generate_recommendation_procedure(connection, database):
 
     # 3. Bungkus jadi SP
     full_procedure = f"""
+    USE TestDB
+    GO
+
 DROP PROCEDURE IF EXISTS recommendation_index;
 GO
 

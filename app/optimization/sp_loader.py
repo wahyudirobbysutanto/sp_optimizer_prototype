@@ -2,8 +2,11 @@ import pyodbc
 
 def get_slow_sp(connection):
     cursor = connection.cursor()
-    cursor.execute("""
-        SELECT TOP 50 
+
+    # This DMV is instance-wide, so we don't need to change databases
+    # We just filter to user databases and stored procs
+    query = """
+        SELECT 
             DB_NAME(st.dbid) AS database_name,
             OBJECT_NAME(st.objectid, st.dbid) AS object_name,
             qs.total_worker_time / qs.execution_count AS avg_cpu_time,
@@ -15,11 +18,37 @@ def get_slow_sp(connection):
         FROM sys.dm_exec_query_stats qs
         CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) st
         WHERE st.objectid IS NOT NULL
+        AND OBJECT_NAME(st.objectid, st.dbid) IS NOT NULL
+        AND DB_NAME(st.dbid) NOT IN ('master', 'msdb', 'tempdb', 'model')
         ORDER BY avg_elapsed_time DESC
-    """)
+    """
+
+    cursor.execute(query)
     results = cursor.fetchall()
     columns = [desc[0] for desc in cursor.description]
     return [dict(zip(columns, row)) for row in results]
+
+
+# def get_slow_sp(connection):
+#     cursor = connection.cursor()
+#     cursor.execute("""
+#         SELECT TOP 50 
+#             DB_NAME(st.dbid) AS database_name,
+#             OBJECT_NAME(st.objectid, st.dbid) AS object_name,
+#             qs.total_worker_time / qs.execution_count AS avg_cpu_time,
+#             qs.total_elapsed_time / qs.execution_count AS avg_elapsed_time,
+#             qs.execution_count,
+#             qs.total_elapsed_time,
+#             qs.creation_time,
+#             st.text AS sql_text
+#         FROM sys.dm_exec_query_stats qs
+#         CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) st
+#         WHERE st.objectid IS NOT NULL
+#         ORDER BY avg_elapsed_time DESC
+#     """)
+#     results = cursor.fetchall()
+#     columns = [desc[0] for desc in cursor.description]
+#     return [dict(zip(columns, row)) for row in results]
 
 
 def get_all_databases(connection):
@@ -44,6 +73,44 @@ def get_sp_definition(connection, db_name, schema, name):
     except Exception as e:
         print("❌ Gagal mengambil isi SP:", e)
         return None
+
+
+def get_stored_procedures_all_databases(connection):
+    cursor = connection.cursor()
+
+    # Step 1: Get all user databases
+    cursor.execute("""
+        SELECT name
+        FROM sys.databases
+        WHERE name NOT IN ('master','model','msdb','tempdb')
+    """)
+    db_list = [row.name for row in cursor.fetchall()]
+
+    all_procs = []
+
+    # Step 2: Loop through each DB and collect stored procedures
+    for db in db_list:
+        cursor.execute(f"USE [{db}];")
+        cursor.execute("""
+            SELECT 
+                SCHEMA_NAME(schema_id) AS schema_name,
+                name,
+                OBJECT_DEFINITION(object_id) AS definition,
+                OBJECTPROPERTY(object_id, 'IsEncrypted') AS is_encrypted
+            FROM sys.objects
+            WHERE type = 'P'
+        """)
+        for row in cursor.fetchall():
+            all_procs.append({
+                "database": db,
+                "schema": row.schema_name,
+                "name": row.name,
+                "definition": row.definition,
+                "is_encrypted": row.is_encrypted,
+                "full_name": f"{db}.{row.schema_name}.{row.name}"
+            })
+
+    return all_procs
 
 
 def get_stored_procedures(connection, database):
@@ -80,21 +147,32 @@ def get_tables(connection, database):
         'database': database
     } for row in cursor.fetchall()]
 
-
 def get_table_columns(connection, db_name, schema, table):
     with connection.cursor() as cursor:
-        # Jalankan USE DB dulu sebagai perintah terpisah
         cursor.execute(f"USE {db_name};")
-
-        # Lanjutkan query SELECT kolom
         cursor.execute("""
-            SELECT COLUMN_NAME
+            SELECT COLUMN_NAME, DATA_TYPE
             FROM INFORMATION_SCHEMA.COLUMNS
             WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
             ORDER BY ORDINAL_POSITION
         """, (schema, table))
+        return [f"{row[0]} ({row[1]})" for row in cursor.fetchall()]
 
-        return [row[0] for row in cursor.fetchall()]
+
+# def get_table_columns(connection, db_name, schema, table):
+#     with connection.cursor() as cursor:
+#         # Jalankan USE DB dulu sebagai perintah terpisah
+#         cursor.execute(f"USE {db_name};")
+
+#         # Lanjutkan query SELECT kolom
+#         cursor.execute("""
+#             SELECT COLUMN_NAME
+#             FROM INFORMATION_SCHEMA.COLUMNS
+#             WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
+#             ORDER BY ORDINAL_POSITION
+#         """, (schema, table))
+
+#         return [row[0] for row in cursor.fetchall()]
 
 
 def build_detailed_table_info(connection, db_name, tables):

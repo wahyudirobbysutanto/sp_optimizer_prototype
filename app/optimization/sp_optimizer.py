@@ -3,7 +3,7 @@ import requests
 import re
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
@@ -55,6 +55,13 @@ Your optimization must meet **all** of the following conditions:
 - Do not suggest or add indexes — indexing is handled in another step
 - Do not use features unavailable in SQL Server Standard Edition
 - Final output must be a single valid stored procedure that can be run as-is
+- ignore the remarks in the stored procedure, focus on the SQL logic
+- Do not include any comments or explanations in the output
+- Do not change the stored procedure name or parameters
+- Do not change the database name or schema
+- Do not change anything inside the remarks section of the stored procedure
+- Do not remove any existing comments in the stored procedure
+- Change the logic only if it improves performance without altering the output
 
 **Strict output format:**
 Return only the optimized stored procedure, wrapped between the tags below.
@@ -114,12 +121,13 @@ Return only the optimized stored procedure, wrapped between the tags below.
         ]
     }
 
+    # print(prompt)
     try:
         response = requests.post(
             GEMINI_URL + f"?key={GEMINI_API_KEY}",
             headers=headers,
             json=body,
-            timeout=30
+            timeout=600
         )
         response.raise_for_status()
         content = response.json()
