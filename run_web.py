@@ -25,10 +25,10 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    db_name = os.getenv("SQL_DATABASE")
-    sps = get_stored_procedures(connection, db_name)
-    sps = [sp for sp in sps if not sp['is_encrypted']]
-    return render_template("index.html", stored_procs=sps, db_name=db_name)
+    # db_name = os.getenv("SQL_DATABASE")
+    # sps = get_stored_procedures_all_databases(connection)
+    # sps = [sp for sp in sps if not sp['is_encrypted']]
+    return render_template("index.html")
 
 @app.route("/analyze", methods=["POST"])
 def analyze_index():
