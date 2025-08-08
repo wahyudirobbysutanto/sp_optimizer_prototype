@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 from app.db_connector import get_connection
-from app.optimization.sp_loader import get_stored_procedures, get_sp_definition, get_tables, get_table_columns, get_slow_sp, get_stored_procedures_all_databases
+from app.optimization.sp_loader import get_stored_procedures, get_sp_definition, get_tables, get_table_columns, get_table_indexes, get_slow_sp, get_stored_procedures_all_databases
 from app.optimization.sp_optimizer import optimize_stored_procedure, sanitize_sql
 from app.optimization.sp_saver import rename_sp_name, save_optimized_sp, save_sql_to_file
 from app.indexing.fragmentation_analyzer import generate_maintenance_sql, analyze_index_fragmentation_all
@@ -266,6 +266,8 @@ def optimize():
         table_names = extract_table_names_from_sql_new(sp_text, database_name)
         # table_names could look like ["Sales.dbo.Orders", "Inventory.dbo.Products"]
 
+        print(table_names)
+
         table_info_lines = []
         for table in table_names:
             try:
@@ -280,12 +282,32 @@ def optimize():
                     continue  # skip if can't parse
 
                 cols = get_table_columns(connection, db, sch, tbl)
-                table_info_lines.append(f"{db}.{sch}.{tbl} ({', '.join(cols)})")
+                
+                # Get indexes for this table
+                indexes = get_table_indexes(connection, db, sch, tbl)
+
+                # Format index info
+                if indexes:
+                    index_info = []
+                    for idx in indexes:
+                        col_type = "included" if idx.is_included_column else "key"
+                        index_info.append(f"{idx.index_name} ({col_type}: {idx.column_name})")
+                    index_str = " | Indexes: " + ", ".join(index_info)
+                else:
+                    index_str = ""
+
+                # table_info_lines.append(f"{db}.{sch}.{tbl} ({', '.join(cols)})")
+                # Append final line with columns and indexes
+                table_info_lines.append(f"{db}.{sch}.{tbl} ({', '.join(cols)}){index_str}")
+                
             except Exception as e:
                 print(f"[WARN] Could not load columns for {table}: {e}")
 
         table_info = "\n".join(table_info_lines)
 
+        print(table_info)
+        # exit()
+        
         optimized_sql = optimize_stored_procedure(sp_text, table_info)
         if not optimized_sql:
             return "❌ Optimization failed (AI did not respond)."

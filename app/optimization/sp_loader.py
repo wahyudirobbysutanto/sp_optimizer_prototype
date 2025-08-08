@@ -158,21 +158,25 @@ def get_table_columns(connection, db_name, schema, table):
         """, (schema, table))
         return [f"{row[0]} ({row[1]})" for row in cursor.fetchall()]
 
-
-# def get_table_columns(connection, db_name, schema, table):
-#     with connection.cursor() as cursor:
-#         # Jalankan USE DB dulu sebagai perintah terpisah
-#         cursor.execute(f"USE {db_name};")
-
-#         # Lanjutkan query SELECT kolom
-#         cursor.execute("""
-#             SELECT COLUMN_NAME
-#             FROM INFORMATION_SCHEMA.COLUMNS
-#             WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
-#             ORDER BY ORDINAL_POSITION
-#         """, (schema, table))
-
-#         return [row[0] for row in cursor.fetchall()]
+def get_table_indexes(connection, db, schema, table):
+    sql = f"""
+    SELECT 
+        ind.name AS index_name,
+        ind.type_desc AS index_type,
+        col.name AS column_name,
+        ic.is_included_column
+    FROM {db}.sys.indexes ind
+    JOIN {db}.sys.index_columns ic
+        ON ind.object_id = ic.object_id AND ind.index_id = ic.index_id
+    JOIN {db}.sys.columns col
+        ON ic.object_id = col.object_id AND ic.column_id = col.column_id
+    WHERE ind.object_id = OBJECT_ID('{db}.{schema}.{table}')
+    ORDER BY ind.name, ic.key_ordinal;
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+    return rows
 
 
 def build_detailed_table_info(connection, db_name, tables):
