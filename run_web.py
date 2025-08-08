@@ -7,7 +7,7 @@ from app.optimization.sp_saver import rename_sp_name, save_optimized_sp, save_sq
 from app.indexing.fragmentation_analyzer import generate_maintenance_sql, analyze_index_fragmentation_all
 from app.indexing.index_ai import get_index_recommendation
 from app.indexing.sql_executor import execute_sql_statements
-from app.indexing.recommendation_builder import generate_recommendation_procedure
+# from app.indexing.recommendation_builder import generate_recommendation_procedure
 from app.utils.utils import is_similar_sql, log_result, log_to_sql, extract_table_names_from_sql, get_existing_index_info, extract_table_names_from_sql_new
 from app.utils.logger import log_action
 
@@ -80,6 +80,7 @@ def analyze_ai():
                 return jsonify({"ai_suggestions": f"-- Failed to read SP: {selected_sp}"})
 
             table_names = extract_table_names_from_sql_new(sp_text, database_name)
+            print("Extracted table names:", table_names)
             # table_names could look like ["Sales.dbo.Orders", "Inventory.dbo.Products"]
 
             table_info_lines = []
@@ -96,18 +97,31 @@ def analyze_ai():
                         continue  # skip if can't parse
 
                     cols = get_table_columns(connection, db, sch, tbl)
-                    table_info_lines.append(f"{db}.{sch}.{tbl} ({', '.join(cols)})")
+                    
+                    # Get indexes for this table
+                    indexes = get_table_indexes(connection, db, sch, tbl)
+                    # print(indexes)
+
+                    # Format index info
+                    if indexes:
+                        index_info = []
+                        for idx in indexes:
+                            col_type = "included" if idx.is_included_column else "key"
+                            index_info.append(f"{idx.index_name} ({col_type}: {idx.column_name})")
+                        index_str = " | Indexes: " + ", ".join(index_info)
+                    else:
+                        index_str = ""
+
+                    # table_info_lines.append(f"{db}.{sch}.{tbl} ({', '.join(cols)})")
+                    # Append final line with columns and indexes
+                    table_info_lines.append(f"{db}.{sch}.{tbl} ({', '.join(cols)}){index_str}")
                 except Exception as e:
                     print(f"[WARN] Could not load columns for {table}: {e}")
 
             table_info = "\n".join(table_info_lines)
 
-            # Ambil index yang sudah ada untuk tabel-tabel tersebut
-            existing_index_info = get_existing_index_info(connection, table_names)
-
-
             # Kirim ke AI
-            ai_suggestions = get_index_recommendation(sp_text, table_info, existing_index_info)
+            ai_suggestions = get_index_recommendation(sp_text, table_info)
 
             if not ai_suggestions:
                 ai_suggestions = "-- (No AI recommendations)"
@@ -285,6 +299,7 @@ def optimize():
                 
                 # Get indexes for this table
                 indexes = get_table_indexes(connection, db, sch, tbl)
+                # print(indexes)
 
                 # Format index info
                 if indexes:
@@ -305,8 +320,6 @@ def optimize():
 
         table_info = "\n".join(table_info_lines)
 
-        print(table_info)
-        # exit()
         
         optimized_sql = optimize_stored_procedure(sp_text, table_info)
         if not optimized_sql:
@@ -314,6 +327,7 @@ def optimize():
 
         optimized_sql = sanitize_sql(optimized_sql)
         optimized_sql = optimized_sql.replace("=== END SP_OPTIMIZED ===", "")
+        # print("Optimized SQL:", optimized_sql)
         optimized_sql = optimized_sql.replace("=== SP_OPTIMIZED ===", "")
 
         similar, ratio = is_similar_sql(sp_text, optimized_sql)
@@ -331,6 +345,7 @@ def save():
         name = request.form.get("name")
 
         optimized_sql, new_name = rename_sp_name(sql_text)
+        # print(optimized_sql)
         success = save_optimized_sp(connection, optimized_sql, overwrite=True, db_name=db_name)
         status = "success" if success else "fail"
 

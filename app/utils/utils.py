@@ -56,16 +56,12 @@ def get_existing_index_info(connection, table_names):
 
     return "\n".join(index_lines)
 
-
-
-import re
-
-
 def extract_table_names_from_sql_new(sql_text, default_db=None):
     """
     Extract table names from SQL text, returning full identifiers:
     db.schema.table
     Removes comments first so patterns in comments are ignored.
+    Excludes temporary tables (#temp, ##globaltemp).
     """
 
     # Remove multi-line comments (/* ... */)
@@ -74,13 +70,14 @@ def extract_table_names_from_sql_new(sql_text, default_db=None):
     # Remove single-line comments (-- ...)
     sql_no_comments = re.sub(r"--.*?$", "", sql_no_multiline, flags=re.MULTILINE)
 
-    # Capture table references
+    # Capture table references, but exclude temp tables starting with #
     pattern = re.compile(
         r"""
         \b(?:FROM|JOIN|INTO|UPDATE|DELETE\s+FROM)\s+
+        (?!\#)                                 # exclude temp tables
         (
-            (?:\[?[a-zA-Z0-9_]+\]?\.){0,2}      # 0 to 2 prefixes (db. schema.)
-            \[?[a-zA-Z0-9_]+\]?                 # final object
+            (?:\[?[a-zA-Z0-9_]+\]?\.){0,2}     # 0 to 2 prefixes (db. schema.)
+            \[?[a-zA-Z0-9_]+\]?                # final object
         )
         """,
         re.IGNORECASE | re.VERBOSE,
@@ -90,20 +87,20 @@ def extract_table_names_from_sql_new(sql_text, default_db=None):
     cleaned = []
 
     for m in matches:
+        # Skip temp tables again as extra safety
+        if m.strip().startswith("#"):
+            continue
+
         parts = [p for p in m.replace("[", "").replace("]", "").split(".") if p]
         if len(parts) == 1 and default_db:
-            # Only table: assume dbo schema and add db
             full_name = f"{default_db}.dbo.{parts[0]}"
         elif len(parts) == 2 and default_db:
-            # schema.table: add db
             full_name = f"{default_db}.{parts[0]}.{parts[1]}"
         else:
-            # Already db.schema.table
             full_name = ".".join(parts)
         cleaned.append(full_name)
 
     return list(set(cleaned))
-
 
 
 def extract_table_names_from_sql(sql_text):

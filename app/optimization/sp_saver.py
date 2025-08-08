@@ -37,23 +37,27 @@ def save_sql_to_file(sql_text, filename, folder="outputs"):
 
 
 def rename_sp_name(sp_sql):
-    from datetime import datetime
-    import re
+    # Normalize line breaks for easier regex matching
+    sql_clean = sp_sql.replace('\r', '').replace('\n', ' ')
 
-    # Gabungkan baris untuk mencari nama SP
-    pattern = r"(?i)CREATE\s+PROCEDURE\s+([^\s\(\n]+)"
-    match = re.search(pattern, sp_sql.replace('\r', '').replace('\n', ' '))
+    # Pattern to capture schema and procedure name
+    # Example match: CREATE PROCEDURE dbo.MyProcedure
+    pattern = r"(?i)CREATE\s+PROCEDURE\s+(?:\[(?P<schema1>[^\]]+)\]|(?P<schema2>[^\.\s]+))\.(?:\[(?P<name1>[^\]]+)\]|(?P<name2>[^\s\(\n]+))"
+    match = re.search(pattern, sql_clean)
 
     if not match:
         raise ValueError("❌ Could not find stored procedure name.")
 
-    original_name = match.group(1).split('.')[-1].strip('[]')
+    schema_name = match.group("schema1") or match.group("schema2") or "dbo"
+    original_name = match.group("name1") or match.group("name2")
+
+    # Create new procedure name
     new_name = f"{original_name}_Opt_{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-    # Ganti di string aslinya (tidak usah pakai replace '\n')
+    # Replace the first CREATE PROCEDURE line with the new schema + name
     updated_sql = re.sub(
-        r"(?i)(CREATE\s+PROCEDURE\s+)([^\s\(\n]+)",
-        fr"\1dbo.[{new_name}]",
+        r"(?i)(CREATE\s+PROCEDURE\s+)(?:\[[^\]]+\]|[^\.\s]+)\.(?:\[[^\]]+\]|[^\s\(\n]+)",
+        fr"\1{schema_name}.[{new_name}]",
         sp_sql,
         count=1
     )
@@ -63,13 +67,14 @@ def rename_sp_name(sp_sql):
 
 
 
+
 def save_optimized_sp(connection, optimized_sql, overwrite=True, db_name=None):    
-    
+        
     cursor = connection.cursor()
     try:
         if db_name is None:
             db_name = os.getenv("SQL_DATABASE")
-
+        
         # Pastikan kita berada di DB yang benar
         cursor.execute(f"USE {db_name};")
 
@@ -81,7 +86,9 @@ def save_optimized_sp(connection, optimized_sql, overwrite=True, db_name=None):
                     cursor.execute(drop_stmt)
                 except Exception as e:
                     print(f"⚠️ Failed to DROP old SP (may not exist yet): {e}")
-        
+
+        # print("Executing optimized SQL:")
+        # print(optimized_sql)
         # Eksekusi SP hasil Gemini
         cursor.execute(optimized_sql)
         connection.commit()

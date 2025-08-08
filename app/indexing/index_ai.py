@@ -1,7 +1,7 @@
 from app.gemini_client import ask_gemini
 import re
 
-def get_index_recommendation(sp_texts, table_info_text, existing_index_info):
+def get_index_recommendation(sp_texts, table_info_text):
     prompt = f"""You are a SQL performance tuning expert.
 
 Please analyze the stored procedure and table definitions below. Recommend additional non-clustered indexes to improve query performance. Focus on WHERE, JOIN, and ORDER BY clauses.
@@ -10,15 +10,17 @@ Only suggest indexes that are not already present.
 
 Output only the SQL commands to create the suggested indexes, using this naming convention: IX_<Table>_<Column>. Use one index per column (no multi-column indexes unless absolutely necessary).
 
+Always include the database name exactly as shown in the table definitions from {table_info_text}, so that the CREATE INDEX syntax is in the format:
+
+CREATE INDEX IX_<Table>_<Column> ON [<DatabaseName>].[<SchemaName>].[<TableName>] (<Column>);
+
 === STORED PROCEDURES ===
 {sp_texts}
 
-=== TABLE STRUCTURE ===
+=== TABLE STRUCTURE & INDEX ===
 {table_info_text}
 
-=== EXISTING INDEXES ===
-{existing_index_info}
-    """
+"""
 
     print(prompt)
 #     prompt = f"""
@@ -48,6 +50,7 @@ Output only the SQL commands to create the suggested indexes, using this naming 
 # """
 
     response = ask_gemini(prompt)
+    # print("AI Response:", response)
     return extract_index_ddl(response)
 
 def extract_index_ddl(ai_text):

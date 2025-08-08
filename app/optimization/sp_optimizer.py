@@ -49,9 +49,9 @@ And here is the list of related tables, including their columns and existing ind
 
 Your optimization must meet **all** of the following conditions:
 - The result set, logic, and schema (table names, column names, structure) must remain identical.
+- Always assign each incoming parameter to a local variable at the start of the procedure, and use the local variable in queries instead of the raw parameter. This is to avoid parameter sniffing and keep execution plans stable across executions with different parameter values.
 - You may use any valid T-SQL technique to improve performance, such as:
-    - Replacing NOT IN / NOT EXISTS with LEFT JOIN filtering
-    - Rewriting or merging CTEs and subqueries
+    - Replacing NOT IN / NOT EXISTS with LEFT JOIN filtering where beneficial
     - Converting correlated subqueries into joins
     - Reordering joins and filters
     - Flattening nested queries if beneficial
@@ -70,7 +70,9 @@ Return only the optimized stored procedure, wrapped between the tags below.
 
 === SP_OPTIMIZED ===  
 (optimized code here)
+=== END SP_OPTIMIZED ===
 """
+
 #     prompt = f"""
 # You are a SQL Server expert. Your task is to optimize the following stored procedure for performance and clarity.
 
@@ -89,6 +91,7 @@ Return only the optimized stored procedure, wrapped between the tags below.
 
 # Your optimization must meet **all** of the following conditions:
 # - Do not change the result or schema (column names, table names, structure)
+# - Always assign each incoming parameter to a local variable at the start of the procedure, and use the local variable in queries instead of the raw parameter. This is to avoid parameter sniffing and keep execution plans stable across executions with different parameter values.
 # - Replace all SELECT * with explicit column lists based on the table metadata
 # - Reorder JOINs or filters if that improves performance, but maintain logic
 # - Do not suggest or add indexes — indexing is handled in another step
@@ -105,8 +108,9 @@ Return only the optimized stored procedure, wrapped between the tags below.
 # **Strict output format:**
 # Return only the optimized stored procedure, wrapped between the tags below.
 
-# === SP_OPTIMIZED ===  
+# === SP_OPTIMIZED ===
 # (optimized code here)
+# === END SP_OPTIMIZED ===
 # """
 
     headers = {
@@ -123,7 +127,7 @@ Return only the optimized stored procedure, wrapped between the tags below.
         ]
     }
 
-    # print(prompt)
+    print(prompt)
     try:
         response = requests.post(
             GEMINI_URL + f"?key={GEMINI_API_KEY}",
@@ -131,8 +135,10 @@ Return only the optimized stored procedure, wrapped between the tags below.
             json=body,
             timeout=600
         )
+        # print(f"Response status code: {response}")
         response.raise_for_status()
         content = response.json()
+        print(content)
         return content["candidates"][0]["content"]["parts"][0]["text"]
     except requests.exceptions.HTTPError as e:
         print(f"❌ HTTP error from Gemini: {e}")
