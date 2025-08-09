@@ -188,7 +188,10 @@ CREATE NONCLUSTERED INDEX IX_Payments_PaymentDate ON FinanceDB.dbo.Payments (Pay
 │   └── utils/
 │   	├── __init__.py
 │   	├── logger.py
-│   	└── utilssaver.py
+│   	└── utils.py
+|	├── __init__.py
+|	├── db_connector.py
+|	└── gemini_client.py
 ├── samples/                            # 📁 Sample SP and outputs
 │   ├── CustomerSearchLog.sql        
 │   ├── generate_fragmentation.sql       

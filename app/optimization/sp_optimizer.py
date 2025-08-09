@@ -33,45 +33,91 @@ def optimize_stored_procedure(sp_text, table_info_text=None):
         table_info_text = "(tidak ada metadata tabel)"
     
     prompt = f"""
-    You are a SQL Server expert. Your task is to optimize the following stored procedure for performance and clarity.
+You are a SQL Server expert. Your task is to **rewrite and optimize** the following stored procedure for performance and clarity.
 
-Below is the current stored procedure:
+**Input:**
+1. Current stored procedure:
 
 === BEGIN SP ===
 {sp_text}
 === END SP ===
 
-And here is the list of related tables, including their columns and existing indexes:
+2. Related tables (columns + existing indexes):
 
 === BEGIN TABLE INFO ===
 {table_info_text}
 === END TABLE INFO ===
 
-Your optimization must meet **all** of the following conditions:
-- The result set, logic, and schema (table names, column names, structure) must remain identical.
-- Always assign each incoming parameter to a local variable at the start of the procedure, and use the local variable in queries instead of the raw parameter. This is to avoid parameter sniffing and keep execution plans stable across executions with different parameter values.
-- You may use any valid T-SQL technique to improve performance, such as:
-    - Replacing NOT IN / NOT EXISTS with LEFT JOIN filtering where beneficial
-    - Converting correlated subqueries into joins
-    - Reordering joins and filters
-    - Flattening nested queries if beneficial
-- Replace all SELECT * with explicit column lists from the provided table metadata.
-- Do not add, remove, or suggest indexes (indexing is handled separately).
-- Only use features available in SQL Server Standard Edition.
-- Keep the stored procedure name, parameters, and database/schema references exactly the same.
-- Do not modify or remove any existing comments inside the stored procedure.
-- Ignore any remarks section for optimization — do not change its text.
-- Do not output explanations or reasoning — only the final optimized stored procedure.
-- Do not add or remove parameters.
-- Only change SQL if it improves execution performance without altering the output.
 
-**Strict output format:**
-Return only the optimized stored procedure, wrapped between the tags below.
+**Optimization rules:**
+- **Keep output identical**: Result set, logic, and schema (table names, column names, and structure) must not change.
+- **Parameter handling**: At the very start of the procedure, assign each incoming parameter to a local variable and use that variable in queries to avoid parameter sniffing.
+- **Allowed optimizations** (only if they improve performance without changing output):
+  - Replace `NOT IN` / `NOT EXISTS` with `LEFT JOIN` filtering if faster.
+  - Convert correlated subqueries to joins.
+  - Reorder joins and filters for better performance.
+  - Flatten nested queries where beneficial.
+- Replace all `SELECT *` with **explicit column lists** based on provided table metadata.
+- Do **not**:
+  - Add, remove, or suggest indexes.
+  - Change stored procedure name, parameters, database, or schema references.
+  - Modify or remove any existing comments inside the procedure.
+  - Change the `UNION` / `UNION ALL` usage — keep exactly as in the original. This is a hard constraint.  
+  - Convert `UNION` to `UNION ALL` or `UNION ALL` to `UNION` under any circumstances.
+  - Add explanations or reasoning — output only the final code.
+  - Add or remove parameters.
+- Only use features available in **SQL Server Standard Edition**.
+- Ignore any remarks section for optimization — keep it unchanged.
+
+**Output format (strict)**:
 
 === SP_OPTIMIZED ===  
-(optimized code here)
+(optimized code here)  
 === END SP_OPTIMIZED ===
-"""
+
+    """
+    
+    # prompt = f"""
+    # You are a SQL Server expert. Your task is to optimize the following stored procedure for performance and clarity.
+
+# Below is the current stored procedure:
+
+# === BEGIN SP ===
+# {sp_text}
+# === END SP ===
+
+# And here is the list of related tables, including their columns and existing indexes:
+
+# === BEGIN TABLE INFO ===
+# {table_info_text}
+# === END TABLE INFO ===
+
+# Your optimization must meet **all** of the following conditions:
+# - The result set, logic, and schema (table names, column names, structure) must remain identical.
+# - Always assign each incoming parameter to a local variable at the start of the procedure, and use the local variable in queries instead of the raw parameter. This is to avoid parameter sniffing and keep execution plans stable across executions with different parameter values.
+# - You may use any valid T-SQL technique to improve performance, such as:
+    # - Replacing NOT IN / NOT EXISTS with LEFT JOIN filtering where beneficial
+    # - Converting correlated subqueries into joins
+    # - Reordering joins and filters
+    # - Flattening nested queries if beneficial
+# - Replace all SELECT * with explicit column lists from the provided table metadata.
+# - Do not add, remove, or suggest indexes (indexing is handled separately).
+# - Only use features available in SQL Server Standard Edition.
+# - Keep the stored procedure name, parameters, and database/schema references exactly the same.
+# - Do not modify or remove any existing comments inside the stored procedure.
+# - Ignore any remarks section for optimization — do not change its text.
+# - Do not output explanations or reasoning — only the final optimized stored procedure.
+# - Do not add or remove parameters.
+# - Only change SQL if it improves execution performance without altering the output.
+# - Do not change the UNION with UNION ALL. 
+
+# **Strict output format:**
+# Return only the optimized stored procedure, wrapped between the tags below.
+
+# === SP_OPTIMIZED ===  
+# (optimized code here)
+# === END SP_OPTIMIZED ===
+# """
 
 #     prompt = f"""
 # You are a SQL Server expert. Your task is to optimize the following stored procedure for performance and clarity.
@@ -124,7 +170,12 @@ Return only the optimized stored procedure, wrapped between the tags below.
                     {"text": prompt}
                 ]
             }
-        ]
+        ],
+        "generationConfig": {
+            "temperature": 0,
+            "topK": 1,
+            "topP": 0.1
+        }
     }
 
     print(prompt)

@@ -4,3 +4,8 @@ python-dotenv
 openai
 requests
 sqlparse>=0.4.4
+jinja2
+pandas
+tabulate
+google-generativeai
+gunicorn

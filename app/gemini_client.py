@@ -15,7 +15,12 @@ def ask_gemini(prompt):
             {
                 "parts": [{"text": prompt}]
             }
-        ]
+        ],
+        "generationConfig": {
+            "temperature": 0,
+            "topK": 1,
+            "topP": 0.1
+        }
     }
 
     try:
