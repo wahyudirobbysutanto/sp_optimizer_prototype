@@ -51,7 +51,7 @@ You are a SQL Server expert. Your task is to **rewrite and optimize** the follow
 
 **Optimization rules:**
 - **Keep output identical**: Result set, logic, and schema (table names, column names, and structure) must not change.
-- **Parameter handling**: At the very start of the procedure, assign each incoming parameter to a local variable and use that variable in queries to avoid parameter sniffing.
+- **Parameter handling**: At the very start of the procedure, assign each incoming parameter to a local variable of the same data type, and use that variable in queries to avoid parameter sniffing.
 - **Allowed optimizations** (only if they improve performance without changing output):
   - Replace `NOT IN` / `NOT EXISTS` with `LEFT JOIN` filtering if faster.
   - Convert correlated subqueries to joins.

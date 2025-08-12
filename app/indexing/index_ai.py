@@ -4,13 +4,15 @@ import re
 def get_index_recommendation(sp_texts, table_info_text):
     prompt = f"""You are a SQL performance tuning expert.
 
-Please analyze the stored procedure and table definitions below. Recommend additional non-clustered indexes to improve query performance. Focus on WHERE, JOIN, and ORDER BY clauses.
+Analyze the stored procedures and table definitions below. Recommend only additional NONCLUSTERED indexes that will significantly improve SELECT, JOIN, and ORDER BY performance.
 
-Only suggest indexes that are not already present.
-
-Output only the SQL commands to create the suggested indexes, using this naming convention: IX_<Table>_<Column>. Use one index per column (no multi-column indexes unless absolutely necessary).
-
-Always include the database name exactly as shown in the table definitions from {table_info_text}, so that the CREATE INDEX syntax is in the format:
+Rules:
+1. Only suggest indexes if the column(s) appear in WHERE, JOIN, or ORDER BY clauses.
+2. Do NOT suggest indexes if the column is already indexed (clustered or non-clustered).
+3. Avoid suggesting indexes on columns with low selectivity (e.g., boolean flags, tiny lookup codes) unless combined with another column in a composite index.
+4. Avoid suggesting indexes on columns that are frequently updated unless the read performance gain is clearly worth the write cost.
+5. Use composite (multi-column) indexes only if they are clearly needed for the query pattern.
+6. Output only the CREATE INDEX statements, using this format:
 
 CREATE INDEX IX_<Table>_<Column> ON [<DatabaseName>].[<SchemaName>].[<TableName>] (<Column>);
 
