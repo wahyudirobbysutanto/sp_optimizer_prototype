@@ -7,7 +7,7 @@ from app.optimization.sp_saver import rename_sp_name, save_optimized_sp, save_sq
 from app.indexing.fragmentation_analyzer import generate_maintenance_sql, analyze_index_fragmentation_all
 from app.indexing.index_ai import get_index_recommendation
 from app.indexing.sql_executor import execute_sql_statements
-# from app.indexing.recommendation_builder import generate_recommendation_procedure
+from app.indexing.system_index_recommendations import get_missing_indexes_all_databases, get_unused_indexes_all_databases
 from app.utils.utils import is_similar_sql, log_result, log_to_sql, extract_table_names_from_sql, get_existing_index_info, extract_table_names_from_sql_new
 from app.utils.logger import log_action
 
@@ -371,6 +371,30 @@ def slow_sp():
     with get_connection() as connection:
         data = get_slow_sp(connection)
         return render_template("slow_sp.html", rows=data)
+
+@app.route("/system-index-recommendations", methods=["GET"])
+def system_index_recommendations():
+    with get_connection() as connection:
+        recommendations = get_missing_indexes_all_databases(connection)
+
+        print(recommendations)
+
+        return render_template(
+            "system_index_recommendations.html",
+            recommendations=recommendations
+        )
+
+@app.route("/system-index-remove", methods=["GET"])
+def system_index_remove():
+    with get_connection() as connection:
+
+        unused_indexes = get_unused_indexes_all_databases(connection)
+        # recommendations = get_system_recommendations(connection)
+    
+        return render_template(
+            "system_index_remove.html",
+            unused_indexes=unused_indexes,
+        )
 
 
 if __name__ == "__main__":
