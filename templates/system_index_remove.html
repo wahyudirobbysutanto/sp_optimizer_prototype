@@ -38,7 +38,7 @@
             <td>{{ rec.indexname }}</td>
             <td>{{ rec.indexsizekb }}</td>
             <td>
-              {% if rec.recommendation == "YES" %}
+              {% if rec.recommendation == "DROP" %}
                 YES
                 <button class="btn btn-sm btn-primary ms-2" onclick="toggleSQL(this)">Show SQL</button>
                 <div class="mt-2 d-none">
