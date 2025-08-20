@@ -7,22 +7,50 @@ def get_index_recommendation(sp_texts, table_info_text):
 Analyze the stored procedures and table definitions below. Recommend only additional NONCLUSTERED indexes that will significantly improve SELECT, JOIN, and ORDER BY performance.
 
 Rules:
-1. Only suggest indexes if the column(s) appear in WHERE, JOIN, or ORDER BY clauses.
+1. Suggest indexes only if the column(s) appear in WHERE, JOIN, or ORDER BY clauses.
 2. Do NOT suggest indexes if the column is already indexed (clustered or non-clustered).
-3. Avoid suggesting indexes on columns with low selectivity (e.g., boolean flags, tiny lookup codes) unless combined with another column in a composite index.
-4. Avoid suggesting indexes on columns that are frequently updated unless the read performance gain is clearly worth the write cost.
-5. Use composite (multi-column) indexes only if they are clearly needed for the query pattern.
-6. Output only the CREATE INDEX statements, using this format:
+3. Avoid indexes on columns with very low selectivity (e.g., boolean flags, status codes) unless they are part of a composite index with a more selective column.
+4. Avoid indexes on columns that are frequently updated unless the read performance gain is clearly worth the write overhead.
+5. Prefer single-column indexes when possible.
+6. Composite indexes are permitted only when:
+   - Multiple columns are often queried together in WHERE/JOIN conditions, OR
+   - A WHERE clause column is combined with ORDER BY on another column, OR
+   - Covering multiple columns reduces multiple index lookups into one.
+7. Use consistent naming for all indexes:
+   - Single-column: IX_<Table>_<Column>
+   - Composite: IX_<Table>_<Col1>_<Col2> (order matters, match query usage)
+8. Output only the CREATE INDEX statements, using this format:
 
-CREATE INDEX IX_<Table>_<Column> ON [<DatabaseName>].[<SchemaName>].[<TableName>] (<Column>);
+CREATE INDEX IX_<Table>_<Column(s)> ON [<DatabaseName>].[<SchemaName>].[<TableName>] (<Column(s)>);
 
 === STORED PROCEDURES ===
 {sp_texts}
 
 === TABLE STRUCTURE & INDEX ===
 {table_info_text}
-
 """
+
+#     prompt = f"""You are a SQL performance tuning expert.
+
+# Analyze the stored procedures and table definitions below. Recommend only additional NONCLUSTERED indexes that will significantly improve SELECT, JOIN, and ORDER BY performance.
+
+# Rules:
+# 1. Only suggest indexes if the column(s) appear in WHERE, JOIN, or ORDER BY clauses.
+# 2. Do NOT suggest indexes if the column is already indexed (clustered or non-clustered).
+# 3. Avoid suggesting indexes on columns with low selectivity (e.g., boolean flags, tiny lookup codes) unless combined with another column in a composite index.
+# 4. Avoid suggesting indexes on columns that are frequently updated unless the read performance gain is clearly worth the write cost.
+# 5. Use composite (multi-column) indexes only if they are clearly needed for the query pattern.
+# 6. Output only the CREATE INDEX statements, using this format:
+
+# CREATE INDEX IX_<Table>_<Column> ON [<DatabaseName>].[<SchemaName>].[<TableName>] (<Column>);
+
+# === STORED PROCEDURES ===
+# {sp_texts}
+
+# === TABLE STRUCTURE & INDEX ===
+# {table_info_text}
+
+# """
 
     print(prompt)
 #     prompt = f"""
