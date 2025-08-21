@@ -103,23 +103,6 @@ def extract_table_names_from_sql_new(sql_text, default_db=None):
     return list(set(cleaned))
 
 
-def extract_table_names_from_sql(sql_text):
-    """
-    Ekstrak nama tabel dari teks SP (dalam format schema.table), termasuk yang memakai [bracket] dan alias.
-    """
-    # Tangkap nama tabel setelah FROM, JOIN, INTO, UPDATE, DELETE FROM — bisa dalam bentuk [schema].[table]
-    pattern = re.compile(
-        r"\b(?:FROM|JOIN|INTO|UPDATE|DELETE\s+FROM)\s+(\[?[a-zA-Z0-9_]+\]?\.\[?[a-zA-Z0-9_]+\]?)",
-        re.IGNORECASE
-    )
-    matches = pattern.findall(sql_text)
-    
-    # Bersihkan dari bracket
-    clean_matches = [m.replace("[", "").replace("]", "") for m in matches]
-    
-    return list(set(clean_matches))
-
-
 
 def is_similar_sql(original_sql, optimized_sql, threshold=0.95):
     matcher = SequenceMatcher(None, original_sql.lower(), optimized_sql.lower())

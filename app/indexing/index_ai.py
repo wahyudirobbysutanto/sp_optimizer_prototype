@@ -20,6 +20,13 @@ Rules:
    - Single-column: IX_<Table>_<Column>
    - Composite: IX_<Table>_<Col1>_<Col2> (order matters, match query usage)
 8. Output only the CREATE INDEX statements, using this format:
+9. Treat indexes with the same set of columns (regardless of order) as duplicates. 
+   Do NOT suggest a new index if an existing index already contains the same columns, even in a different order, unless the order difference clearly affects WHERE + ORDER BY performance.
+10. Before suggesting a new composite index, check if an existing index with similar columns 
+    could be adjusted (e.g., column order or adding an INCLUDE column) instead of creating a new one.
+11. Do NOT suggest indexes that duplicate the leading column(s) of an existing composite index 
+    unless there is a clear query pattern that requires a different order.
+
 
 CREATE INDEX IX_<Table>_<Column(s)> ON [<DatabaseName>].[<SchemaName>].[<TableName>] (<Column(s)>);
 

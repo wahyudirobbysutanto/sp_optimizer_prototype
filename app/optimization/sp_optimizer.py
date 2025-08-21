@@ -67,6 +67,11 @@ You are a SQL Server expert. Your task is to **rewrite and optimize** the follow
   - Add explanations or reasoning — output only the final code.
   - Add or remove parameters.
 - Only use features available in **SQL Server Standard Edition**.
+- **Strict SQL Server compatibility rules**:
+  - Do not use `MAX(a, b)`, `MIN(a, b)`, `GREATEST()`, `LEAST()`, or any non-T-SQL scalar functions.
+  - To compare scalar values, use `CASE WHEN ... THEN ... ELSE ... END` or `IIF()` (SQL Server 2012+).
+  - Do not generate PL/pgSQL, PL/SQL, or MySQL syntax (no `LIMIT`, no `:=`, no `ON DUPLICATE KEY`, etc.).
+  - Use only T-SQL syntax supported by SQL Server.
 - Ignore any remarks section for optimization — keep it unchanged.
 
 **Output format (strict)**:
@@ -76,6 +81,53 @@ You are a SQL Server expert. Your task is to **rewrite and optimize** the follow
 === END SP_OPTIMIZED ===
 
     """
+    
+    
+
+#     prompt = f"""
+# You are a SQL Server expert. Your task is to **rewrite and optimize** the following stored procedure for performance and clarity.
+
+# **Input:**
+# 1. Current stored procedure:
+
+# === BEGIN SP ===
+# {sp_text}
+# === END SP ===
+
+# 2. Related tables (columns + existing indexes):
+
+# === BEGIN TABLE INFO ===
+# {table_info_text}
+# === END TABLE INFO ===
+
+
+# **Optimization rules:**
+# - **Keep output identical**: Result set, logic, and schema (table names, column names, and structure) must not change.
+# - **Parameter handling**: At the very start of the procedure, assign each incoming parameter to a local variable of the same data type, and use that variable in queries to avoid parameter sniffing.
+# - **Allowed optimizations** (only if they improve performance without changing output):
+#   - Replace `NOT IN` / `NOT EXISTS` with `LEFT JOIN` filtering if faster.
+#   - Convert correlated subqueries to joins.
+#   - Reorder joins and filters for better performance.
+#   - Flatten nested queries where beneficial.
+# - Replace all `SELECT *` with **explicit column lists** based on provided table metadata.
+# - Do **not**:
+#   - Add, remove, or suggest indexes.
+#   - Change stored procedure name, parameters, database, or schema references.
+#   - Modify or remove any existing comments inside the procedure.
+#   - Change the `UNION` / `UNION ALL` usage — keep exactly as in the original. This is a hard constraint.  
+#   - Convert `UNION` to `UNION ALL` or `UNION ALL` to `UNION` under any circumstances.
+#   - Add explanations or reasoning — output only the final code.
+#   - Add or remove parameters.
+# - Only use features available in **SQL Server Standard Edition**.
+# - Ignore any remarks section for optimization — keep it unchanged.
+
+# **Output format (strict)**:
+
+# === SP_OPTIMIZED ===  
+# (optimized code here)  
+# === END SP_OPTIMIZED ===
+
+#     """
     
     # prompt = f"""
     # You are a SQL Server expert. Your task is to optimize the following stored procedure for performance and clarity.
@@ -178,7 +230,7 @@ You are a SQL Server expert. Your task is to **rewrite and optimize** the follow
         }
     }
 
-    print(prompt)
+    # print(prompt)
     try:
         response = requests.post(
             GEMINI_URL + f"?key={GEMINI_API_KEY}",
@@ -186,7 +238,7 @@ You are a SQL Server expert. Your task is to **rewrite and optimize** the follow
             json=body,
             timeout=600
         )
-        # print(f"Response status code: {response}")
+        print(f"Response status code: {response}")
         response.raise_for_status()
         content = response.json()
         print(content)

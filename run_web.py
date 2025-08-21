@@ -8,7 +8,7 @@ from app.indexing.fragmentation_analyzer import generate_maintenance_sql, analyz
 from app.indexing.index_ai import get_index_recommendation
 from app.indexing.sql_executor import execute_sql_statements
 from app.indexing.system_index_recommendations import get_missing_indexes_all_databases, get_unused_indexes_all_databases
-from app.utils.utils import is_similar_sql, log_result, log_to_sql, extract_table_names_from_sql, get_existing_index_info, extract_table_names_from_sql_new
+from app.utils.utils import is_similar_sql, log_result, log_to_sql, get_existing_index_info, extract_table_names_from_sql_new
 from app.utils.logger import log_action
 
 from datetime import datetime
@@ -96,7 +96,7 @@ def analyze_ai():
                     else:
                         continue  # skip if can't parse
 
-                    cols = get_table_columns(connection, db, sch, tbl)
+                    cols = get_table_columns(connection, db, sch, tbl, sp_text)
                     
                     # Get indexes for this table
                     indexes = get_table_indexes(connection, db, sch, tbl)
@@ -295,7 +295,7 @@ def optimize():
                 else:
                     continue  # skip if can't parse
 
-                cols = get_table_columns(connection, db, sch, tbl)
+                cols = get_table_columns(connection, db, sch, tbl, sp_text)
                 
                 # Get indexes for this table
                 indexes = get_table_indexes(connection, db, sch, tbl)
@@ -319,7 +319,6 @@ def optimize():
                 print(f"[WARN] Could not load columns for {table}: {e}")
 
         table_info = "\n".join(table_info_lines)
-
         
         optimized_sql = optimize_stored_procedure(sp_text, table_info)
         if not optimized_sql:

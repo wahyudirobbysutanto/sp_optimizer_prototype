@@ -1,4 +1,5 @@
 import pyodbc
+import re
 
 def get_slow_sp(connection):
     cursor = connection.cursor()
@@ -147,7 +148,7 @@ def get_tables(connection, database):
         'database': database
     } for row in cursor.fetchall()]
 
-def get_table_columns(connection, db_name, schema, table):
+def get_table_columns(connection, db_name, schema, table, sp_text=None):
     with connection.cursor() as cursor:
         cursor.execute(f"USE {db_name};")
         cursor.execute("""
@@ -156,7 +157,23 @@ def get_table_columns(connection, db_name, schema, table):
             WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
             ORDER BY ORDINAL_POSITION
         """, (schema, table))
-        return [f"{row[0]} ({row[1]})" for row in cursor.fetchall()]
+        all_columns = cursor.fetchall()
+
+        used_cols = []
+        for col, dtype in all_columns:
+            # cari pola "table.col" atau langsung "col"
+            pattern1 = rf"\b{table}\s*\.\s*{col}\b"
+            pattern2 = rf"\b{col}\b"
+            if re.search(pattern1, sp_text, re.IGNORECASE) or re.search(pattern2, sp_text, re.IGNORECASE):
+                used_cols.append(f"{col} ({dtype})")
+
+        # fallback: kalau tidak ketemu sama sekali, pakai semua
+        if not used_cols:
+            used_cols = [f"{col} ({dtype})" for col, dtype in all_columns]
+
+        return used_cols
+
+        # return [f"{row[0]} ({row[1]})" for row in cursor.fetchall()]
 
 def get_table_indexes(connection, db, schema, table):
     sql = f"""
