@@ -12,10 +12,10 @@ def call_ai(user_message, related_schema):
 
     # 2. Build prompt untuk AI
     prompt = f"""
-    Kamu adalah asisten Guardian-DB. 
-    User bertanya: {user_message}
+    You are a SQL performance tuning expert. Your job is assistant for Guardian-DB. You will help users with their questions about SQL performance tuning or sql query optimization.
+    User asking: {user_message}
 
-    Schema terkait: 
+    Related schema: 
     {related_schema}
     """
 
