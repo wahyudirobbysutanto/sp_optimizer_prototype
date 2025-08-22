@@ -3,6 +3,40 @@ from datetime import datetime
 from difflib import SequenceMatcher
 import re
 
+import faiss
+import pickle
+import numpy as np
+from sentence_transformers import SentenceTransformer
+
+# --- Tambahan untuk FAISS ---
+DATA_DIR = "data"
+FAISS_FILE = os.path.join(DATA_DIR, "faiss_index.bin")
+TEXTS_FILE = os.path.join(DATA_DIR, "schema_texts.pkl")
+
+# Load model & index sekali
+_model = None
+_index = None
+_texts = None
+
+def load_faiss():
+    global _model, _index, _texts
+    if _model is None:
+        _model = SentenceTransformer("all-MiniLM-L6-v2")
+    if _index is None:
+        _index = faiss.read_index(FAISS_FILE)
+    if _texts is None:
+        with open(TEXTS_FILE, "rb") as f:
+            _texts = pickle.load(f)
+    return _model, _index, _texts
+
+def search_schema(query, top_k=5):
+    """Cari schema relevan di FAISS"""
+    model, index, texts = load_faiss()
+    q_emb = model.encode([query], convert_to_numpy=True)
+    D, I = index.search(q_emb, top_k)
+    results = [(texts[i], float(D[0][j])) for j, i in enumerate(I[0])]
+    return results
+
 def get_existing_index_info(connection, table_names):
     """
     Get index info from a list of db.schema.table names.
@@ -132,3 +166,74 @@ def log_to_sql(connection, sp_name, status, similarity=None, note=None):
         connection.commit()
     except Exception as e:
         print(f"⚠️ Failed to log into database: {e}")
+
+
+def get_db_schema_with_indexes_all_databases(connection):
+    cursor = connection.cursor()
+
+    # ambil semua database kecuali system
+    cursor.execute("""
+        SELECT name 
+        FROM sys.databases
+        WHERE name NOT IN ('master', 'tempdb', 'model', 'msdb')
+    """)
+    databases = [row[0] for row in cursor.fetchall()]
+
+    all_schema_info = {}
+
+    for db in databases:
+        try:
+            print(f"🔍 Processing database: {db}")
+            cursor.execute(f"USE [{db}]")
+
+            query = """
+            SELECT 
+                sch.name AS SchemaName,
+                t.name AS TableName,
+                c.name AS ColumnName,
+                ty.name AS DataType,
+                i.name AS IndexName,
+                i.type_desc AS IndexType,
+                ic.is_included_column,
+                ic.key_ordinal
+            FROM sys.tables t
+            INNER JOIN sys.schemas sch ON t.schema_id = sch.schema_id
+            INNER JOIN sys.columns c ON t.object_id = c.object_id
+            INNER JOIN sys.types ty ON c.user_type_id = ty.user_type_id
+            LEFT JOIN sys.index_columns ic 
+                ON t.object_id = ic.object_id AND c.column_id = ic.column_id
+            LEFT JOIN sys.indexes i 
+                ON ic.object_id = i.object_id AND ic.index_id = i.index_id
+            ORDER BY sch.name, t.name, i.name, ic.key_ordinal;
+            """
+
+            cursor.execute(query)
+            rows = cursor.fetchall()
+
+            schema_info = {}
+            for row in rows:
+                table_key = f"{db}.{row.SchemaName}.{row.TableName}"
+                if table_key not in schema_info:
+                    schema_info[table_key] = {
+                        "columns": [],
+                        "indexes": {}
+                    }
+                schema_info[table_key]["columns"].append(f"{row.ColumnName} ({row.DataType})")
+
+                if row.IndexName:
+                    if row.IndexName not in schema_info[table_key]["indexes"]:
+                        schema_info[table_key]["indexes"][row.IndexName] = {
+                            "type": row.IndexType,
+                            "columns": []
+                        }
+                    schema_info[table_key]["indexes"][row.IndexName]["columns"].append(row.ColumnName)
+
+            all_schema_info.update(schema_info)
+
+        except Exception as e:
+            print(f"⚠️ Skipping database {db}: {e}")
+
+    return all_schema_info
+
+
+

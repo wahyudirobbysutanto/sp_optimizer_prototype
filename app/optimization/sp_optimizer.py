@@ -2,6 +2,7 @@ import os
 import requests
 import re
 from dotenv import load_dotenv
+from app.gemini_client import ask_gemini
 
 load_dotenv(override=True)
 
@@ -211,38 +212,42 @@ You are a SQL Server expert. Your task is to **rewrite and optimize** the follow
 # === END SP_OPTIMIZED ===
 # """
 
-    headers = {
-        "Content-Type": "application/json"
-    }
 
-    body = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": prompt}
-                ]
-            }
-        ],
-        "generationConfig": {
-            "temperature": 0,
-            "topK": 1,
-            "topP": 0.1
-        }
-    }
+
+    # headers = {
+    #     "Content-Type": "application/json"
+    # }
+
+    # body = {
+    #     "contents": [
+    #         {
+    #             "parts": [
+    #                 {"text": prompt}
+    #             ]
+    #         }
+    #     ],
+    #     "generationConfig": {
+    #         "temperature": 0,
+    #         "topK": 1,
+    #         "topP": 0.1
+    #     }
+    # }
 
     # print(prompt)
     try:
-        response = requests.post(
-            GEMINI_URL + f"?key={GEMINI_API_KEY}",
-            headers=headers,
-            json=body,
-            timeout=600
-        )
-        print(f"Response status code: {response}")
-        response.raise_for_status()
-        content = response.json()
-        print(content)
-        return content["candidates"][0]["content"]["parts"][0]["text"]
+        # response = requests.post(
+        #     GEMINI_URL + f"?key={GEMINI_API_KEY}",
+        #     headers=headers,
+        #     json=body,
+        #     timeout=600
+        # )
+        # print(f"Response status code: {response}")
+        # response.raise_for_status()
+        # content = response.json()
+        # print(content)
+        response = ask_gemini(prompt)
+        return response
+        # return content["candidates"][0]["content"]["parts"][0]["text"]
     except requests.exceptions.HTTPError as e:
         print(f"❌ HTTP error from Gemini: {e}")
     except Exception as e:

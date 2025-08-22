@@ -1,0 +1,16 @@
+Use TestDB
+GO
+
+CREATE TABLE ChatSessions (
+    ChatID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    Title NVARCHAR(255),
+    CreatedAt DATETIME DEFAULT GETDATE()
+);
+
+CREATE TABLE ChatMessages (
+    MessageID INT IDENTITY PRIMARY KEY,
+    ChatID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES ChatSessions(ChatID),
+    Role NVARCHAR(50), -- 'user' atau 'assistant'
+    Content NVARCHAR(MAX),
+    CreatedAt DATETIME DEFAULT GETDATE()
+);

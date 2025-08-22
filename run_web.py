@@ -8,12 +8,19 @@ from app.indexing.fragmentation_analyzer import generate_maintenance_sql, analyz
 from app.indexing.index_ai import get_index_recommendation
 from app.indexing.sql_executor import execute_sql_statements
 from app.indexing.system_index_recommendations import get_missing_indexes_all_databases, get_unused_indexes_all_databases
-from app.utils.utils import is_similar_sql, log_result, log_to_sql, get_existing_index_info, extract_table_names_from_sql_new
+from app.utils.utils import is_similar_sql, log_result, log_to_sql, get_existing_index_info, extract_table_names_from_sql_new, search_schema
 from app.utils.logger import log_action
+
+from app.gemini_client import call_ai
 
 from datetime import datetime
 from dotenv import load_dotenv
 import os
+
+import uuid
+import datetime
+import markdown
+from markupsafe import Markup
 
 load_dotenv(override=True)
 
@@ -394,6 +401,97 @@ def system_index_remove():
             "system_index_remove.html",
             unused_indexes=unused_indexes,
         )
+
+# @app.route("/chat", methods=["GET", "POST"])
+# def chat():
+#     if request.method == "POST":
+#         user_input = request.form.get("message")
+#         response = "(AI will reply here...)"  # nanti integrasi ke FAISS + LLM
+        
+#         return render_template("chat.html", messages=[{"user": user_input, "ai": response}])
+    
+#     return render_template("chat.html", messages=[])
+
+# ---- LIST CHAT ----
+@app.route("/chats")
+def chat_list():
+   with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT ChatID, Title, CreatedAt FROM TestDB.dbo.ChatSessions ORDER BY CreatedAt DESC")
+        rows = cursor.fetchall()
+        chats = [
+            {"id": row[0], "title": row[1], "created_at": row[2]}
+            for row in rows
+        ]
+        return render_template("chat_list.html", chats=chats)
+
+# ---- NEW CHAT ----
+@app.route("/chats/new")
+def new_chat():
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        chat_id = str(uuid.uuid4())
+        cursor.execute("INSERT INTO TestDB.dbo.ChatSessions (ChatID, Title, CreatedAt) VALUES (?, ?, ?)",
+                    chat_id, "New Chat", datetime.datetime.now())
+        conn.commit()
+
+        return redirect(url_for("chat_detail", chat_id=chat_id))
+
+@app.route("/chat/<chat_id>/update_chat_title", methods=["POST"])
+def update_chat_title(chat_id):
+    # data = request.get_json()
+    # new_title = data.get("title")
+    new_title = request.form.get("title", "").strip()
+
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE [TestDB].[dbo].[ChatSessions] SET title = ? WHERE ChatID = ?", (new_title, chat_id))
+        conn.commit()
+
+    return redirect(url_for("chat_detail", chat_id=chat_id))
+
+
+# ---- DETAIL CHAT ----
+@app.route("/chat/<chat_id>")
+def chat_detail(chat_id):
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT Title FROM TestDB.dbo.ChatSessions WHERE ChatID = ?", chat_id)
+        session = cursor.fetchone()
+        title = session[0] if session else "Untitled"
+
+        cursor.execute("SELECT Role, Content, CreatedAt FROM TestDB.dbo.ChatMessages WHERE ChatID = ? ORDER BY CreatedAt", chat_id)
+        messages = cursor.fetchall()
+
+        for m in messages:
+            # convert markdown ke HTML
+            # m.Content = Markup(markdown.markdown(m.Content))
+            m.Content = Markup(markdown.markdown(m.Content, extensions=['fenced_code']))
+
+        return render_template("chat_detail.html", session=title, messages=messages, chat_id=chat_id)
+
+# ---- POST MESSAGE ----
+@app.route("/chat/<chat_id>/send", methods=["POST"])
+def send_message(chat_id):
+    with get_connection() as conn:
+        content = request.form["message"]
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO TestDB.dbo.ChatMessages (ChatID, Role, Content, CreatedAt) VALUES (?, ?, ?, ?)",
+                    chat_id, "user", content, datetime.datetime.now())
+        conn.commit()
+        
+        # --- proses AI ---
+        related_schema = search_schema(content)   # fungsi kamu
+        ai_reply = call_ai(content, related_schema)  # bisa pakai OpenAI/Gemini
+        
+        # --- simpan jawaban AI ---
+        cursor.execute("""
+            INSERT INTO TestDB.dbo.ChatMessages (ChatID, Role, Content, CreatedAt)
+            VALUES (?, ?, ?, ?)
+        """, (chat_id, "ai", ai_reply, datetime.datetime.now()))
+        conn.commit()
+
+        return redirect(url_for("chat_detail", chat_id=chat_id))
 
 
 if __name__ == "__main__":

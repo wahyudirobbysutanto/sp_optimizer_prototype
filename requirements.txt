@@ -9,3 +9,8 @@ pandas
 tabulate
 google-generativeai
 gunicorn
+faiss-cpu
+numpy
+sentence-transformers
+markdown
+

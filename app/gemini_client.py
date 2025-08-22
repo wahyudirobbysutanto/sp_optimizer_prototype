@@ -8,12 +8,35 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
 
+def call_ai(user_message, related_schema):
+
+    # 2. Build prompt untuk AI
+    prompt = f"""
+    Kamu adalah asisten Guardian-DB. 
+    User bertanya: {user_message}
+
+    Schema terkait: 
+    {related_schema}
+    """
+
+    print(prompt)
+
+    # 3. Kirim ke Gemini (atau model lain)
+    ai_response = ask_gemini(prompt)
+
+    return ai_response
+
 def ask_gemini(prompt):
-    headers = {"Content-Type": "application/json"}
-    payload = {
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    body = {
         "contents": [
             {
-                "parts": [{"text": prompt}]
+                "parts": [
+                    {"text": prompt}
+                ]
             }
         ],
         "generationConfig": {
@@ -24,7 +47,7 @@ def ask_gemini(prompt):
     }
 
     try:
-        response = requests.post(GEMINI_URL, headers=headers, data=json.dumps(payload))
+        response = requests.post(GEMINI_URL, headers=headers, json=body,timeout=600)
         response.raise_for_status()
         result = response.json()
         return result["candidates"][0]["content"]["parts"][0]["text"]
