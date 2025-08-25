@@ -19,7 +19,7 @@ def call_ai(user_message, related_schema):
     {related_schema}
     """
 
-    print(prompt)
+    # print(prompt)
 
     # 3. Kirim ke Gemini (atau model lain)
     ai_response = ask_gemini(prompt)
@@ -47,10 +47,26 @@ def ask_gemini(prompt):
     }
 
     try:
-        response = requests.post(GEMINI_URL, headers=headers, json=body,timeout=600)
+        response = requests.post(GEMINI_URL, headers=headers, json=body, timeout=600)
         response.raise_for_status()
         result = response.json()
-        return result["candidates"][0]["content"]["parts"][0]["text"]
+        
+        print("✅ Gemini response received.")
+        print(result)
+
+        # cek struktur respons
+        if "candidates" in result and len(result["candidates"]) > 0:
+            candidate = result["candidates"][0]
+            if "content" in candidate and "parts" in candidate["content"]:
+                return candidate["content"]["parts"][0].get("text", "")
+        
+        print("⚠️ Unexpected Gemini response:", result)
+        return None
+
+        # response = requests.post(GEMINI_URL, headers=headers, json=body,timeout=600)
+        # response.raise_for_status()
+        # result = response.json()
+        # return result["candidates"][0]["content"]["parts"][0]["text"]
     except Exception as e:
         print("❌ Gemini API error:", e)
         return None

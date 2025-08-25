@@ -30,12 +30,105 @@ def load_faiss():
     return _model, _index, _texts
 
 def search_schema(query, top_k=5):
-    """Cari schema relevan di FAISS"""
+    table_info = extract_table_names_from_sql_new(query)
+
+    # make unique while preserving order
+    table_info = list(dict.fromkeys(table_info))
+    top_k = len(table_info)
+
     model, index, texts = load_faiss()
-    q_emb = model.encode([query], convert_to_numpy=True)
-    D, I = index.search(q_emb, top_k)
-    results = [(texts[i], float(D[0][j])) for j, i in enumerate(I[0])]
+    q_emb = model.encode([query], convert_to_numpy=True)[0]
+
+    # print(texts[:5])
+
+    results = []
+    if table_info:
+        for info in table_info:
+            # print(info)
+            # print(len(info.split(".")))
+            db = None
+            schema = None
+            tbl = None
+            if (len(info.split("."))==3):
+                db = info.split(".")[0].lower()
+                schema = info.split(".")[1].lower()
+                tbl = info.split(".")[2].lower()
+                # print(f"Searching for db: {db}, schema: {schema}, table: {tbl}")
+            
+            elif (len(info.split("."))==2):
+                schema = info.split(".")[0].lower()
+                tbl = info.split(".")[1].lower()
+                # print(f"Searching for schema: {schema}, table: {tbl}")
+            
+            else:
+                continue
+            
+            
+            for txt in texts:
+                # if db and db.lower() not in txt.lower():
+                #     continue  # skip jika db tidak sama
+
+                if db:
+                    check = db.lower()+'.'+schema.lower()+'.'+tbl.lower()
+                else:
+                    check = schema.lower()+'.'+tbl.lower()
+                
+                if (check.lower() in txt.lower()):
+                    emb = model.encode([txt], convert_to_numpy=True)[0]
+                    score = float(np.dot(q_emb, emb) / (np.linalg.norm(q_emb) * np.linalg.norm(emb)))
+                    results.append((txt, score))
+    else:
+        # fallback global
+        D, I = index.search(np.array([q_emb]), top_k)
+        results = [(texts[i], float(D[0][j])) for j, i in enumerate(I[0])]
+    
+    results = sorted(results, key=lambda x: x[1], reverse=True)[:top_k]
     return results
+
+
+
+
+def extract_table_names_from_sql_new_no_defaultdb(sql_text):
+    """
+    Extract table names from SQL text, returning raw identifiers:
+    db.schema.table OR schema.table OR table
+    Removes comments first so patterns in comments are ignored.
+    Excludes temporary tables (#temp, ##globaltemp).
+    """
+
+    # Remove multi-line comments (/* ... */)
+    sql_no_multiline = re.sub(r"/\*.*?\*/", "", sql_text, flags=re.DOTALL)
+
+    # Remove single-line comments (-- ...)
+    sql_no_comments = re.sub(r"--.*?$", "", sql_no_multiline, flags=re.MULTILINE)
+
+    # Capture table references, but exclude temp tables starting with #
+    pattern = re.compile(
+        r"""
+        \b(?:FROM|JOIN|INTO|UPDATE|DELETE\s+FROM)\s+
+        (?!\#)                                 # exclude temp tables
+        (
+            (?:\[?[a-zA-Z0-9_]+\]?\.){0,2}     # 0 to 2 prefixes (db. schema.)
+            \[?[a-zA-Z0-9_]+\]?                # final object
+        )
+        """,
+        re.IGNORECASE | re.VERBOSE,
+    )
+
+    matches = pattern.findall(sql_no_comments)
+    cleaned = []
+
+    for m in matches:
+        # Skip temp tables again as extra safety
+        if m.strip().startswith("#"):
+            continue
+
+        # Clean brackets
+        full_name = m.replace("[", "").replace("]", "")
+        cleaned.append(full_name)
+
+    return list(set(cleaned))
+
 
 def get_existing_index_info(connection, table_names):
     """
